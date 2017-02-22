@@ -24,6 +24,7 @@ public class COREElasticSearchConfiguration {
 
         JestClientFactory factory = new JestClientFactory();
         factory.setHttpClientConfig(new HttpClientConfig.Builder(endpoint)
+                .readTimeout(60000)
                 .multiThreaded(true)
                 .build());
         JestClient jestClient = factory.getObject();

@@ -43,12 +43,13 @@ public class CORESearchService {
                 .addIndex("articles")
                 .addType("article")
                 .build();
-
+        
         io.searchbox.core.SearchResult searchResult = null;
         try {
             searchResult = jestClient.execute(search);
         } catch (IOException ex) {
-
+            System.out.println("ex = " + ex);
+            ex.printStackTrace();
         }
 
         omtdSearchResult.setFrom(query.getFrom());

@@ -1,0 +1,362 @@
+package eu.openminted.content.connector.core.mappings;
+
+import eu.openminted.registry.domain.Abstract;
+import eu.openminted.registry.domain.ActorInfo;
+import eu.openminted.registry.domain.AnnotatedDocumentInfo;
+import eu.openminted.registry.domain.AnnotationInfo;
+import eu.openminted.registry.domain.AttributionText;
+import eu.openminted.registry.domain.CharacterEncodingEnum;
+import eu.openminted.registry.domain.Contributor;
+import eu.openminted.registry.domain.DistributionMediumEnum;
+import eu.openminted.registry.domain.Document;
+import eu.openminted.registry.domain.DocumentDistributionInfo;
+import eu.openminted.registry.domain.DocumentInfo;
+import eu.openminted.registry.domain.DocumentMetadataRecord;
+import eu.openminted.registry.domain.DocumentTypeEnum;
+import eu.openminted.registry.domain.FullText;
+import eu.openminted.registry.domain.JournalIdentifier;
+import eu.openminted.registry.domain.JournalTitle;
+import eu.openminted.registry.domain.Language;
+import eu.openminted.registry.domain.MetadataHeaderInfo;
+import eu.openminted.registry.domain.MetadataIdentifier;
+import eu.openminted.registry.domain.MetadataIdentifierSchemeNameEnum;
+import eu.openminted.registry.domain.MimeTypeEnum;
+import eu.openminted.registry.domain.OrganizationName;
+import eu.openminted.registry.domain.PersonName;
+import eu.openminted.registry.domain.PublicationIdentifier;
+import eu.openminted.registry.domain.RelatedJournal;
+import eu.openminted.registry.domain.RelatedOrganization;
+import eu.openminted.registry.domain.RelatedPerson;
+import eu.openminted.registry.domain.RelatedRepository;
+import eu.openminted.registry.domain.RepositoryIdentifier;
+import eu.openminted.registry.domain.RepositoryName;
+import eu.openminted.registry.domain.SizeInfo;
+import eu.openminted.registry.domain.SizeUnitEnum;
+import eu.openminted.registry.domain.SourceOfMetadataRecord;
+import eu.openminted.registry.domain.Subject;
+import eu.openminted.registry.domain.Title;
+import eu.openminted.registry.domain.UserTypeEnum;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
+import uk.ac.core.elasticsearch.entities.ElasticSearchJournal;
+import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
+
+/**
+ *
+ * @author lucasanastasiou
+ */
+public class COREtoOMTDMapper {
+
+    /**
+     * Converts a CORE document to OMTD schema 
+     * @param esam
+     * @return 
+     */
+    public static DocumentMetadataRecord convertCOREtoOMTD(ElasticSearchArticleMetadata esam) {
+        DocumentMetadataRecord documentMetadataRecord = new DocumentMetadataRecord();
+
+        // -- HEADER
+        MetadataHeaderInfo metadataHeaderInfo = new MetadataHeaderInfo();
+        // -- -- metadata creation date <-- repository document metadata updated
+        long time = esam.getRepositoryDocument().getMetadataUpdated();
+        Date date = new Date((long) time * 1000);
+        GregorianCalendar c = new GregorianCalendar();
+        c.setTime(date);
+        XMLGregorianCalendar xMLGregorianCalendar = null;
+        try {
+            xMLGregorianCalendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
+            metadataHeaderInfo.setMetadataCreationDate(xMLGregorianCalendar);
+        } catch (DatatypeConfigurationException ex) {
+            Logger.getLogger(COREtoOMTDMapper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // -- -- metadata creators <-- contributors
+        List<RelatedPerson> relatedPersons = new ArrayList<>();
+        for (String contributor : esam.getContributors()) {
+            RelatedPerson relatedPerson = new RelatedPerson();
+            List<PersonName> personNames = new ArrayList<>();
+            PersonName personName = new PersonName();
+            personName.setValue(contributor);
+            personNames.add(personName);
+            relatedPerson.setPersonNames(personNames);
+            relatedPerson.setPersonIdentifiers(null);
+            relatedPersons.add(relatedPerson);
+        }
+        metadataHeaderInfo.setMetadataCreators(relatedPersons);
+        // -- -- metadata languages <-- 
+        List<Language> languages = new ArrayList<Language>();
+        if (esam.getLanguage() != null) {
+            Language language = new Language();
+            language.setLanguageId(esam.getLanguage().getCode());
+            language.setLanguageTag(esam.getLanguage().getName());
+            languages.add(language);
+            metadataHeaderInfo.setMetadataLanguages(languages);
+        }
+        // -- -- metadata last date updated <-- repository document metadata updated
+        metadataHeaderInfo.setMetadataLastDateUpdated(xMLGregorianCalendar);
+        // -- -- metadata record identifier <-- 
+        MetadataIdentifier metadataIdentifier = new MetadataIdentifier();
+        metadataIdentifier.setMetadataIdentifierSchemeName(MetadataIdentifierSchemeNameEnum.OTHER);
+        metadataIdentifier.setSchemeURI("");
+        metadataIdentifier.setValue(esam.getIdentifiers().get(0));
+        metadataHeaderInfo.setMetadataRecordIdentifier(metadataIdentifier);
+        metadataHeaderInfo.setRevision(null);
+        // -- -- source of metadata record
+        SourceOfMetadataRecord source = new SourceOfMetadataRecord();
+        List<RepositoryName> repositoryNames = new ArrayList<>();
+        RelatedRepository relatedRepository = new RelatedRepository();
+        for (ElasticSearchRepo repo : esam.getRepositories()) {
+
+            RepositoryName repositoryName = new RepositoryName();
+            repositoryName.setLang(null);
+            repositoryName.setValue(repo.getName());
+            repositoryNames.add(repositoryName);
+            relatedRepository.setrepositoryNames(repositoryNames);
+            List<RepositoryIdentifier> repositoryIdentifiers = new ArrayList<>();
+            RepositoryIdentifier repositoryIdentifier = new RepositoryIdentifier();
+            repositoryIdentifier.setValue("" + repo.getId());
+            repositoryIdentifiers.add(repositoryIdentifier);
+            relatedRepository.setrepositoryIdentifiers(repositoryIdentifiers);
+        }
+        source.setCollectedFrom(relatedRepository);
+        source.setSourceMetadataLink(esam.getRepositories().get(0).getSource());
+        metadataHeaderInfo.setSourceOfMetadataRecord(source);
+        // -- -- 
+        metadataHeaderInfo.setUserQuery("");
+
+        // *** metadata header end
+        documentMetadataRecord.setMetadataHeaderInfo(metadataHeaderInfo);
+        // ***
+
+        Document document = new Document();
+        
+        DocumentInfo documentInfo = new DocumentInfo();
+        // -- -- abstract
+        List<Abstract> abstracts = new ArrayList<>();
+        Abstract dAbstract = new Abstract();
+        dAbstract.setValue(esam.getDescription());
+        abstracts.add(dAbstract);
+        documentInfo.setAbstracts(abstracts);
+
+        // -- -- authors
+        List<RelatedPerson> authors = new ArrayList<>();
+        for (String cAuthor : esam.getAuthors()) {
+            RelatedPerson relatedPerson = new RelatedPerson();
+            PersonName personName = new PersonName();
+            personName.setValue(cAuthor);
+            List<PersonName> personNames = new ArrayList<>();
+            personNames.add(personName);
+            relatedPerson.setPersonNames(personNames);
+            authors.add(relatedPerson);
+        }
+        documentInfo.setAuthors(relatedPersons);
+
+        // -- -- Conference
+        documentInfo.setConference(null);
+
+        // -- -- contributors
+        List<Contributor> contributors = new ArrayList<>();
+        for (String cContributor : esam.getContributors()) {
+            Contributor contributor = new Contributor();
+            RelatedPerson relatedPerson = new RelatedPerson();
+            List<PersonName> personNames = new ArrayList<>();
+            PersonName personName = new PersonName();
+            personName.setValue(cContributor);
+            relatedPerson.setPersonNames(personNames);
+            contributor.setRelatedPerson(relatedPerson);
+            contributor.setRelatedOrganization(null);
+        }
+        documentInfo.setContributors(contributors);
+
+        // -- -- distribution info
+        DocumentDistributionInfo documentDistributionInfo = new DocumentDistributionInfo();
+        // -- -- -- access url
+        String accessUrl = "https://core.ac.uk/display/" + esam.getId();
+        List<String> accessURLs = new ArrayList<String>();
+        accessURLs.add(accessUrl);
+        documentDistributionInfo.setAccessURLs(accessURLs);
+        // -- -- -- attribution text
+        List<AttributionText> attributionTexts = new ArrayList<>();
+        AttributionText attributionText = new AttributionText();
+        attributionText.setLang(null);
+        attributionText.setValue(null);
+        attributionTexts.add(attributionText);
+        documentDistributionInfo.setAttributionTexts(attributionTexts);
+        // -- -- -- availability end date
+        documentDistributionInfo.setAvailabilityEndDate(null);
+        // -- -- -- availability start date
+        documentDistributionInfo.setAvailabilityStartDate(null);
+
+        // -- -- -- encodings
+        List<CharacterEncodingEnum> encodings = new ArrayList<>();
+        encodings.add(CharacterEncodingEnum.UTF_8);
+        documentDistributionInfo.setCharacterEncodings(encodings);
+        // -- -- -- copyrights
+        documentDistributionInfo.setCopyrightStatements(null);
+        // -- -- -- distributions
+        List<DistributionMediumEnum> distributions = new ArrayList<>();
+        distributions.add(DistributionMediumEnum.DOWNLOADABLE);
+        distributions.add(DistributionMediumEnum.ACCESSIBLE_THROUGH_INTERFACE);
+        documentDistributionInfo.setDistributionMediums(distributions);
+        // -- -- -- download urls
+        List<String> dlUrls = new ArrayList<>();
+        if (esam.getFullText() != null) {
+            dlUrls.add("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
+            dlUrls.add(esam.getFullTextIdentifier());
+            documentDistributionInfo.setDownloadURLs(dlUrls);
+        }
+        // -- -- -- fee
+        documentDistributionInfo.setFee(null);
+        // -- -- -- fullText
+        FullText fullText = new FullText();
+        fullText.setLang(null);
+        fullText.setValue(esam.getFullText());
+        documentDistributionInfo.setFullText(fullText);
+        // -- -- -- mime types
+        List<MimeTypeEnum> mimes = new ArrayList<>();
+        mimes.add(MimeTypeEnum.APPLICATION_PDF);
+        documentDistributionInfo.setMimeTypes(mimes);
+        // -- -- -- rights holders
+        documentDistributionInfo.setRightsHolders(null);
+        // -- -- -- rights info
+        documentDistributionInfo.setRightsInfo(null);
+        // -- -- -- sizes
+        SizeInfo sizeInfo = new SizeInfo();
+        sizeInfo.setSize("" + esam.getRepositoryDocument().getPdfSize());
+        sizeInfo.setSizeUnit(SizeUnitEnum.BYTES);
+        List<SizeInfo> sizeInfos = new ArrayList<>();
+        sizeInfos.add(sizeInfo);
+        documentDistributionInfo.setSizes(sizeInfos);
+        // -- -- -- user types
+        List<UserTypeEnum> userTypes = new ArrayList<UserTypeEnum>();
+        userTypes.add(UserTypeEnum.ACADEMIC);
+        documentDistributionInfo.setUserTypes(userTypes);
+
+        // -- -- SET document distribution info
+        List<DocumentDistributionInfo> documentDistributionInfos = new ArrayList<>();
+        documentDistributionInfos.add(documentDistributionInfo);
+
+        // -- languages
+        List<Language> languages2 = new ArrayList<>();
+        if (esam.getLanguage() != null) {
+            Language language = new Language();
+            language.setLanguageId(esam.getLanguage().getCode());
+            language.setLanguageTag(esam.getLanguage().getName());
+            languages2.add(language);
+            documentInfo.setDocumentLanguages(languages2);
+        }
+        if (esam.getFullText() != null) {
+            documentInfo.setDocumentType(DocumentTypeEnum.FULL_TEXT);
+        } else {
+            documentInfo.setDocumentType(DocumentTypeEnum.BIBLIOGRAPHIC_RECORD_ONLY);
+        }
+        documentInfo.setEdition(null);
+        documentInfo.setFundingProjects(null);
+        // -- identifiers
+        if (esam.getIdentifiers() != null) {
+            List<PublicationIdentifier> pubIdentifiers = new ArrayList<>();
+            for (String id : esam.getIdentifiers()) {
+                PublicationIdentifier publicationIdentifier = new PublicationIdentifier();
+                publicationIdentifier.setValue(id);
+                pubIdentifiers.add(publicationIdentifier);
+            }
+            documentInfo.setIdentifiers(pubIdentifiers);
+        }
+        // -- inbook
+        documentInfo.setInBook(null);
+        // -- journal
+        RelatedJournal relatedJournal = new RelatedJournal();
+        for (ElasticSearchJournal esamJ : esam.getJournals()) {
+            List<JournalIdentifier> jIds = new ArrayList<>();
+            for (String esamJournalIdentifier : esamJ.getIdentifiers()) {
+                JournalIdentifier jId = new JournalIdentifier();
+                jId.setValue(esamJournalIdentifier);
+                jIds.add(jId);
+            }
+            List<JournalTitle> jTitles = new ArrayList<>();
+            JournalTitle journalTitle = new JournalTitle();
+            journalTitle.setValue(esamJ.getTitle());
+            jTitles.add(journalTitle);
+            relatedJournal.setJournalIdentifiers(jIds);
+            relatedJournal.setJournalTitles(jTitles);
+        }
+        documentInfo.setJournal(relatedJournal);
+        // -- keywords
+        documentInfo.setKeywords(null);
+        documentInfo.setPages(null);
+        try {
+            String datePublished = esam.getDatePublished();
+            Date dateOfPublish = null;
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+            dateOfPublish = df.parse(datePublished);
+            eu.openminted.registry.domain.Date omtdDate = new eu.openminted.registry.domain.Date();
+            omtdDate.setDay(dateOfPublish.getDay());
+            omtdDate.setMonth(dateOfPublish.getMonth());
+            omtdDate.setYear(dateOfPublish.getYear());
+            documentInfo.setPublicationDate(omtdDate);
+        } catch (ParseException ex) {
+            Logger.getLogger(COREtoOMTDMapper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        documentInfo.setPublicationType(null);
+        // -- publisher
+        ActorInfo actorInfo = new ActorInfo();
+        RelatedOrganization relatedOrganization = new RelatedOrganization();
+        OrganizationName organizationName = new OrganizationName();
+        organizationName.setValue(esam.getPublisher());
+        List<OrganizationName> oNames = new ArrayList<>();
+        oNames.add(organizationName);
+        relatedOrganization.setOrganizationNames(oNames);
+        actorInfo.setRelatedOrganization(relatedOrganization);
+        documentInfo.setPublisher(actorInfo);
+        // -- size
+        documentInfo.setSeries(null);
+        SizeInfo sizeInfo1 = new SizeInfo();
+        sizeInfo.setSize("" + esam.getRepositoryDocument().getPdfSize());
+        sizeInfo.setSizeUnit(SizeUnitEnum.BYTES);
+        List<SizeInfo> sizeInfos1 = new ArrayList<>();
+        sizeInfos.add(sizeInfo1);
+        documentInfo.setSizes(sizeInfos1);
+        // -- subjects
+        if (esam.getSubjects() != null) {
+            List<Subject> subjects = new ArrayList<>();
+            for (String esamSubject : esam.getSubjects()) {
+                Subject subject = new Subject();
+                subject.setValue(esamSubject);
+                subjects.add(subject);
+            }
+            documentInfo.setSubjects(subjects);
+        }
+        if (esam.getTitle() != null) {
+            List<Title> titles = new ArrayList<>();
+            Title title = new Title();
+            title.setValue(esam.getTitle());
+            titles.add(title);
+            documentInfo.setTitles(titles);
+        }
+        documentInfo.setVolume(null);
+        // set document info
+        document.setPublication(documentInfo);
+
+        AnnotatedDocumentInfo annotatedDocumentInfo = new AnnotatedDocumentInfo();
+        AnnotationInfo annotationInfo = new AnnotationInfo();        
+        annotatedDocumentInfo.setAnnotationInfo(null);
+        annotatedDocumentInfo.setRawPublication(null);
+        // set annotation - is empty atm
+        document.setAnnotatedPublication(annotatedDocumentInfo);
+
+        documentMetadataRecord.setDocument(document);
+        return documentMetadataRecord;
+    }
+}

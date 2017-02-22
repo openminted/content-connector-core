@@ -10,6 +10,7 @@ import eu.openminted.content.connector.Query;
 import eu.openminted.registry.domain.Facet;
 import eu.openminted.registry.domain.Value;
 import io.searchbox.core.SearchResult;
+import io.searchbox.core.SearchResult.Hit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,9 +70,9 @@ public class ElasticsearchConverter {
                 + "    \"facets\" : {\n"
                 + facetString
                 + "    },\n"
-                + "    \"fields\": [\n"
-                + "       \"title\",\"description\"\n"
-                + "    ],\n"
+//                + "    \"fields\": [\n"
+//                + "       \"title\",\"description\"\n"
+//                + "    ],\n"
                 + "    \"from\":" + from + ",\n"
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
@@ -124,7 +125,8 @@ public class ElasticsearchConverter {
     }
 
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
-        List<io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
+        List<Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
+        List<Hit<Map,Void>> mapHits = searchResult.getHits(Map.class);
         List<String> publications = new ArrayList<>();
         for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
             if (hit!=null && hit.source != null) {
