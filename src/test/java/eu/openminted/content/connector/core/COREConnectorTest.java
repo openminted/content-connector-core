@@ -3,12 +3,10 @@ package eu.openminted.content.connector.core;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.SearchResult;
 import java.io.InputStream;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+
+import org.junit.*;
+
 import static org.junit.Assert.*;
-import org.junit.Test;
 
 /**
  *
@@ -39,6 +37,7 @@ public class COREConnectorTest {
      * Test of search method, of class COREConnector.
      */
     @Test
+    @Ignore
     public void testSearch() {
         System.out.println("search");
         Query query = null;
@@ -54,6 +53,7 @@ public class COREConnectorTest {
      * Test of downloadFullText method, of class COREConnector.
      */
     @Test
+    @Ignore
     public void testDownloadFullText() {
         System.out.println("downloadFullText");
         String string = "";
@@ -69,6 +69,7 @@ public class COREConnectorTest {
      * Test of fetchMetadata method, of class COREConnector.
      */
     @Test
+    @Ignore
     public void testFetchMetadata() {
         System.out.println("fetchMetadata");
         Query query = null;
@@ -84,6 +85,7 @@ public class COREConnectorTest {
      * Test of getSourceName method, of class COREConnector.
      */
     @Test
+    @Ignore
     public void testGetSourceName() {
         System.out.println("getSourceName");
         COREConnector instance = new COREConnector();
