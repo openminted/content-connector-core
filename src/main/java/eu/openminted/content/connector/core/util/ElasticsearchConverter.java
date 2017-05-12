@@ -11,14 +11,15 @@ import eu.openminted.registry.domain.Facet;
 import eu.openminted.registry.domain.Value;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
 /**
- *
  * @author lucasanastasiou
  */
 public class ElasticsearchConverter {
@@ -82,30 +83,35 @@ public class ElasticsearchConverter {
     public static List<Facet> getOmtdFacetsFromSearchResult(SearchResult searchResult, List<String> queryFacets) {
         List<eu.openminted.registry.domain.Facet> omtdFacets = new ArrayList<>();
 
-        JsonObject jsonObject = searchResult.getJsonObject();
-        JsonObject facetsJsonObject = jsonObject.getAsJsonObject("facets");
+        try {
 
-        for (String f : queryFacets) {
-            eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
-            omtdFacet.setLabel(f + "Facet");
-            omtdFacet.setField(f);
+            JsonObject jsonObject = searchResult.getJsonObject();
+            JsonObject facetsJsonObject = jsonObject.getAsJsonObject("facets");
 
-            JsonObject fJObj = facetsJsonObject.getAsJsonObject(f + "Facet");
-            JsonArray terms = fJObj.getAsJsonArray("terms");
+            for (String f : queryFacets) {
+                eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
+                omtdFacet.setLabel(f + "Facet");
+                omtdFacet.setField(f);
 
-            List<Value> omtdFacetValues = new ArrayList<>();
-            for (int i = 0; i < terms.size(); i++) {
-                JsonObject fTermElement = terms.get(i).getAsJsonObject();
-                String term = fTermElement.get("term").getAsString();
-                int count = fTermElement.get("count").getAsInt();
-                Value omtdValue = new Value();
-                omtdValue.setValue(term);
-                omtdValue.setCount(count);
-                omtdFacetValues.add(omtdValue);
+                JsonObject fJObj = facetsJsonObject.getAsJsonObject(f + "Facet");
+                JsonArray terms = fJObj.getAsJsonArray("terms");
+
+                List<Value> omtdFacetValues = new ArrayList<>();
+                for (int i = 0; i < terms.size(); i++) {
+                    JsonObject fTermElement = terms.get(i).getAsJsonObject();
+                    String term = fTermElement.get("term").getAsString();
+                    int count = fTermElement.get("count").getAsInt();
+                    Value omtdValue = new Value();
+                    omtdValue.setValue(term);
+                    omtdValue.setCount(count);
+                    omtdFacetValues.add(omtdValue);
+                }
+
+                omtdFacet.setValues(omtdFacetValues);
+
             }
-
-            omtdFacet.setValues(omtdFacetValues);
-
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return omtdFacets;
     }
@@ -125,22 +131,30 @@ public class ElasticsearchConverter {
     }
 
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
-        List<Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
-        List<Hit<Map,Void>> mapHits = searchResult.getHits(Map.class);
         List<String> publications = new ArrayList<>();
-        for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
-            if (hit!=null && hit.source != null) {
-                publications.add(hit.source.toString());
+        try {
+            List<Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
+            List<Hit<Map, Void>> mapHits = searchResult.getHits(Map.class);
+            for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
+                if (hit != null && hit.source != null) {
+                    publications.add(hit.source.toString());
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return publications;
     }
 
     public static List<ElasticSearchArticleMetadata> getPublicationsFromSearchResult(SearchResult searchResult) {
-        List<io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
         List<ElasticSearchArticleMetadata> publications = new ArrayList<>();
-        for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
-            publications.add(hit.source);
+        try {
+            List<io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
+            for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
+                publications.add(hit.source);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return publications;
     }
@@ -148,18 +162,22 @@ public class ElasticsearchConverter {
     public static List<ElasticSearchArticleMetadata> getPublicationsFromResultJsonArray(JsonArray hits) {
         java.util.Random random = new Random();
         List<ElasticSearchArticleMetadata> results = new ArrayList<>();
-        for (int i = 0; i < hits.size(); i++) {
-            JsonElement obj = hits.get(i).getAsJsonObject().get("_source");
-            Gson gson = new GsonBuilder()
-                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-                    .create();
-            //aaaaaa cannot do gson deserailisation - shall be done manually
-            try {
-                ElasticSearchArticleMetadata esam = gson.fromJson(obj, ElasticSearchArticleMetadata.class);
-                results.add(esam);
-            } catch (JsonSyntaxException j) {
-                System.out.println("json syntax exception " + j.getMessage());
+        try {
+            for (int i = 0; i < hits.size(); i++) {
+                JsonElement obj = hits.get(i).getAsJsonObject().get("_source");
+                Gson gson = new GsonBuilder()
+                        .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+                        .create();
+                //aaaaaa cannot do gson deserailisation - shall be done manually
+                try {
+                    ElasticSearchArticleMetadata esam = gson.fromJson(obj, ElasticSearchArticleMetadata.class);
+                    results.add(esam);
+                } catch (JsonSyntaxException j) {
+                    System.out.println("json syntax exception " + j.getMessage());
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return results;
     }

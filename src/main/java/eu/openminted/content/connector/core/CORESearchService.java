@@ -33,6 +33,7 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 public class CORESearchService {
 
     @Autowired
+    private
     JestClient jestClient;
 
     public SearchResult query(Query query) {
@@ -54,8 +55,12 @@ public class CORESearchService {
 
             omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
             omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+
             omtdSearchResult.setTotalHits(searchResult.getTotal());
         } catch (IOException ex) {
+            System.out.println("ex = " + ex);
+            ex.printStackTrace();
+        } catch (Exception ex) {
             System.out.println("ex = " + ex);
             ex.printStackTrace();
         }
@@ -63,25 +68,25 @@ public class CORESearchService {
     }
 
     public InputStream fetchBigResultSet(Query omtdQuery) throws IOException {
-        QueryBuilder queryBuilder = QueryBuilders
-                .queryStringQuery(omtdQuery.getKeyword());
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(queryBuilder);
-//        searchSourceBuilder.fields(fields);
-        searchSourceBuilder.fetchSource(null, "fullText");//do not fetch fulltext - will overwhelm the response
-
-
-        Search search = new Search.Builder(searchSourceBuilder.toString())
-                .addIndex("articles")
-                .addType("article")
-                .setParameter(Parameters.SIZE, 25)//each scroll can fetch up to 15*25=375 results (15 the number of shards in core cluster)
-                .setParameter(Parameters.SCROLL, "5m") // 5 minutes should be enough to digest these               
-                .build();
-
-        JestResult result = jestClient.execute(search);
         List<ElasticSearchArticleMetadata> publicationResults = new ArrayList<>();
-
         try {
+            QueryBuilder queryBuilder = QueryBuilders
+                    .queryStringQuery(omtdQuery.getKeyword());
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.query(queryBuilder);
+//        searchSourceBuilder.fields(fields);
+            searchSourceBuilder.fetchSource(null, "fullText");//do not fetch fulltext - will overwhelm the response
+
+
+            Search search = new Search.Builder(searchSourceBuilder.toString())
+                    .addIndex("articles")
+                    .addType("article")
+                    .setParameter(Parameters.SIZE, 25)//each scroll can fetch up to 15*25=375 results (15 the number of shards in core cluster)
+                    .setParameter(Parameters.SCROLL, "5m") // 5 minutes should be enough to digest these
+                    .build();
+
+            JestResult result = jestClient.execute(search);
+
             String newScrollId = "";
             newScrollId = result.getJsonObject().get("_scroll_id").getAsString();
             String scrollId = "";
