@@ -1,41 +1,7 @@
 package eu.openminted.content.connector.core.mappings;
 
-import eu.openminted.registry.domain.Abstract;
-import eu.openminted.registry.domain.ActorInfo;
-import eu.openminted.registry.domain.AnnotatedDocumentInfo;
-import eu.openminted.registry.domain.AnnotationInfo;
-import eu.openminted.registry.domain.AttributionText;
-import eu.openminted.registry.domain.CharacterEncodingEnum;
-import eu.openminted.registry.domain.Contributor;
-import eu.openminted.registry.domain.DistributionMediumEnum;
-import eu.openminted.registry.domain.Document;
-import eu.openminted.registry.domain.DocumentDistributionInfo;
-import eu.openminted.registry.domain.DocumentInfo;
-import eu.openminted.registry.domain.DocumentMetadataRecord;
-import eu.openminted.registry.domain.DocumentTypeEnum;
-import eu.openminted.registry.domain.FullText;
-import eu.openminted.registry.domain.JournalIdentifier;
-import eu.openminted.registry.domain.JournalTitle;
-import eu.openminted.registry.domain.Language;
-import eu.openminted.registry.domain.MetadataHeaderInfo;
-import eu.openminted.registry.domain.MetadataIdentifier;
-import eu.openminted.registry.domain.MetadataIdentifierSchemeNameEnum;
-import eu.openminted.registry.domain.MimeTypeEnum;
-import eu.openminted.registry.domain.OrganizationName;
-import eu.openminted.registry.domain.PersonName;
-import eu.openminted.registry.domain.PublicationIdentifier;
-import eu.openminted.registry.domain.RelatedJournal;
-import eu.openminted.registry.domain.RelatedOrganization;
-import eu.openminted.registry.domain.RelatedPerson;
-import eu.openminted.registry.domain.RelatedRepository;
-import eu.openminted.registry.domain.RepositoryIdentifier;
-import eu.openminted.registry.domain.RepositoryName;
-import eu.openminted.registry.domain.SizeInfo;
-import eu.openminted.registry.domain.SizeUnitEnum;
-import eu.openminted.registry.domain.SourceOfMetadataRecord;
-import eu.openminted.registry.domain.Subject;
-import eu.openminted.registry.domain.Title;
-import eu.openminted.registry.domain.UserTypeEnum;
+import eu.openminted.registry.domain.*;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -82,27 +48,27 @@ public class COREtoOMTDMapper {
         }
 
         // -- -- metadata creators <-- contributors
-        List<RelatedPerson> relatedPersons = new ArrayList<>();
+        List<PersonInfo> relatedPersons = new ArrayList<>();
         for (String contributor : esam.getContributors()) {
-            RelatedPerson relatedPerson = new RelatedPerson();
-            List<PersonName> personNames = new ArrayList<>();
-            PersonName personName = new PersonName();
+            PersonInfo relatedPerson = new PersonInfo();
+            Names personNames = new Names();
+            Name personName = new Name();
             personName.setValue(contributor);
-            personNames.add(personName);
-            relatedPerson.setPersonNames(personNames);
+            personNames.getName().add(personName);
+            relatedPerson.getNames().add(personNames);
             relatedPerson.setPersonIdentifiers(null);
             relatedPersons.add(relatedPerson);
         }
         metadataHeaderInfo.setMetadataCreators(relatedPersons);
-        // -- -- metadata languages <-- 
-        List<Language> languages = new ArrayList<Language>();
-        if (esam.getLanguage() != null) {
-            Language language = new Language();
-            language.setLanguageId(esam.getLanguage().getCode());
-            language.setLanguageTag(esam.getLanguage().getName());
-            languages.add(language);
-            metadataHeaderInfo.setMetadataLanguages(languages);
-        }
+//        // -- -- metadata languages <--
+//        List<Language> languages = new ArrayList<Language>();
+//        if (esam.getLanguage() != null) {
+//            Language language = new Language();
+//            language.setLanguageId(esam.getLanguage().getCode());
+//            language.setLanguageTag(esam.getLanguage().getName());
+//            languages.add(language);
+//            metadataHeaderInfo.setMetadataLanguages(languages);
+//        }
         // -- -- metadata last date updated <-- repository document metadata updated
         metadataHeaderInfo.setMetadataLastDateUpdated(xMLGregorianCalendar);
         // -- -- metadata record identifier <-- 
@@ -115,19 +81,19 @@ public class COREtoOMTDMapper {
         // -- -- source of metadata record
         SourceOfMetadataRecord source = new SourceOfMetadataRecord();
         List<RepositoryName> repositoryNames = new ArrayList<>();
-        RelatedRepository relatedRepository = new RelatedRepository();
+        RepositoryInfo relatedRepository = new RepositoryInfo();
         for (ElasticSearchRepo repo : esam.getRepositories()) {
 
             RepositoryName repositoryName = new RepositoryName();
             repositoryName.setLang(null);
             repositoryName.setValue(repo.getName());
             repositoryNames.add(repositoryName);
-            relatedRepository.setrepositoryNames(repositoryNames);
+            relatedRepository.setRepositoryNames(repositoryNames);
             List<RepositoryIdentifier> repositoryIdentifiers = new ArrayList<>();
             RepositoryIdentifier repositoryIdentifier = new RepositoryIdentifier();
             repositoryIdentifier.setValue("" + repo.getId());
             repositoryIdentifiers.add(repositoryIdentifier);
-            relatedRepository.setrepositoryIdentifiers(repositoryIdentifiers);
+            relatedRepository.setRepositoryIdentifiers(repositoryIdentifiers);
         }
         source.setCollectedFrom(relatedRepository);
         source.setSourceMetadataLink(esam.getRepositories().get(0).getSource());
@@ -150,14 +116,14 @@ public class COREtoOMTDMapper {
         documentInfo.setAbstracts(abstracts);
 
         // -- -- authors
-        List<RelatedPerson> authors = new ArrayList<>();
+        List<PersonInfo> authors = new ArrayList<>();
         for (String cAuthor : esam.getAuthors()) {
-            RelatedPerson relatedPerson = new RelatedPerson();
-            PersonName personName = new PersonName();
+            PersonInfo relatedPerson = new PersonInfo();
+            Name personName = new Name();
             personName.setValue(cAuthor);
-            List<PersonName> personNames = new ArrayList<>();
-            personNames.add(personName);
-            relatedPerson.setPersonNames(personNames);
+            Names personNames = new Names();
+            personNames.getName().add(personName);
+            relatedPerson.getNames().add(personNames);
             authors.add(relatedPerson);
         }
         documentInfo.setAuthors(relatedPersons);
@@ -166,14 +132,14 @@ public class COREtoOMTDMapper {
         documentInfo.setConference(null);
 
         // -- -- contributors
-        List<Contributor> contributors = new ArrayList<>();
+        List<ActorInfo> contributors = new ArrayList<>();
         for (String cContributor : esam.getContributors()) {
-            Contributor contributor = new Contributor();
-            RelatedPerson relatedPerson = new RelatedPerson();
-            List<PersonName> personNames = new ArrayList<>();
-            PersonName personName = new PersonName();
+            ActorInfo contributor = new ActorInfo();
+            PersonInfo relatedPerson = new PersonInfo();
+            Names personNames = new Names();
+            Name personName = new Name();
             personName.setValue(cContributor);
-            relatedPerson.setPersonNames(personNames);
+            relatedPerson.getNames().add(personNames);
             contributor.setRelatedPerson(relatedPerson);
             contributor.setRelatedOrganization(null);
         }
@@ -183,7 +149,7 @@ public class COREtoOMTDMapper {
         DocumentDistributionInfo documentDistributionInfo = new DocumentDistributionInfo();
         // -- -- -- access url
         String accessUrl = "https://core.ac.uk/display/" + esam.getId();
-        List<String> accessURLs = new ArrayList<String>();
+        List<String> accessURLs = new ArrayList<>();
         accessURLs.add(accessUrl);
         documentDistributionInfo.setAccessURLs(accessURLs);
         // -- -- -- attribution text
@@ -224,9 +190,11 @@ public class COREtoOMTDMapper {
         fullText.setValue(esam.getFullText());
         documentDistributionInfo.setFullText(fullText);
         // -- -- -- mime types
-        List<MimeTypeEnum> mimes = new ArrayList<>();
-        mimes.add(MimeTypeEnum.APPLICATION_PDF);
-        documentDistributionInfo.setMimeTypes(mimes);
+        List<DataFormatInfo> dataFormatInfos = new ArrayList<>();
+        DataFormatInfo dataFormatInfo = new DataFormatInfo();
+        dataFormatInfo.setMimeType(MimeTypeEnum.APPLICATION_PDF);
+        dataFormatInfos.add(dataFormatInfo);
+        documentDistributionInfo.setDataFormats(dataFormatInfos);
         // -- -- -- rights holders
         documentDistributionInfo.setRightsHolders(null);
         // -- -- -- rights info
@@ -239,7 +207,7 @@ public class COREtoOMTDMapper {
         sizeInfos.add(sizeInfo);
         documentDistributionInfo.setSizes(sizeInfos);
         // -- -- -- user types
-        List<UserTypeEnum> userTypes = new ArrayList<UserTypeEnum>();
+        List<UserTypeEnum> userTypes = new ArrayList<>();
         userTypes.add(UserTypeEnum.ACADEMIC);
         documentDistributionInfo.setUserTypes(userTypes);
 
@@ -257,7 +225,7 @@ public class COREtoOMTDMapper {
             documentInfo.setDocumentLanguages(languages2);
         }
         if (esam.getFullText() != null) {
-            documentInfo.setDocumentType(DocumentTypeEnum.FULL_TEXT);
+            documentInfo.setDocumentType(DocumentTypeEnum.WITH_FULL_TEXT);
         } else {
             documentInfo.setDocumentType(DocumentTypeEnum.BIBLIOGRAPHIC_RECORD_ONLY);
         }
@@ -276,7 +244,7 @@ public class COREtoOMTDMapper {
         // -- inbook
         documentInfo.setInBook(null);
         // -- journal
-        RelatedJournal relatedJournal = new RelatedJournal();
+        JournalInfo relatedJournal = new JournalInfo();
         for (ElasticSearchJournal esamJ : esam.getJournals()) {
             List<JournalIdentifier> jIds = new ArrayList<>();
             for (String esamJournalIdentifier : esamJ.getIdentifiers()) {
@@ -288,7 +256,7 @@ public class COREtoOMTDMapper {
             JournalTitle journalTitle = new JournalTitle();
             journalTitle.setValue(esamJ.getTitle());
             jTitles.add(journalTitle);
-            relatedJournal.setJournalIdentifiers(jIds);
+            relatedJournal.setIdentifiers(jIds);
             relatedJournal.setJournalTitles(jTitles);
         }
         documentInfo.setJournal(relatedJournal);
@@ -311,15 +279,16 @@ public class COREtoOMTDMapper {
 
         documentInfo.setPublicationType(null);
         // -- publisher
-        ActorInfo actorInfo = new ActorInfo();
-        RelatedOrganization relatedOrganization = new RelatedOrganization();
+//        ActorInfo actorInfo = new ActorInfo();
+        OrganizationInfo relatedOrganization = new OrganizationInfo();
         OrganizationName organizationName = new OrganizationName();
         organizationName.setValue(esam.getPublisher());
         List<OrganizationName> oNames = new ArrayList<>();
         oNames.add(organizationName);
         relatedOrganization.setOrganizationNames(oNames);
-        actorInfo.setRelatedOrganization(relatedOrganization);
-        documentInfo.setPublisher(actorInfo);
+//        actorInfo.setRelatedOrganization(relatedOrganization);
+        documentInfo.setPublisher(relatedOrganization);
+//        documentInfo.setPublisher(actorInfo);
         // -- size
         documentInfo.setSeries(null);
         SizeInfo sizeInfo1 = new SizeInfo();
