@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
 /**
@@ -26,6 +27,8 @@ public class ElasticsearchConverter {
 
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
+        if (keyword == null ) keyword = "";
+
         String escapedKeyword = org.apache.lucene.queryparser.flexible.standard.QueryParserUtil.escape(keyword);
 
         String esQuery = "{\n"
@@ -40,7 +43,9 @@ public class ElasticsearchConverter {
         int from = query.getFrom();
         int to = query.getTo();
         String keyword = query.getKeyword();
-        String escapedKeyword = org.apache.lucene.queryparser.flexible.standard.QueryParserUtil.escape(keyword);
+        if (keyword == null ) keyword = "";
+
+        String escapedKeyword = QueryParserUtil.escape(keyword);
 
         List<String> facets = query.getFacets();
         Map<String, List<String>> params = query.getParams();
