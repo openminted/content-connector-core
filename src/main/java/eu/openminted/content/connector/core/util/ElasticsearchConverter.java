@@ -13,6 +13,7 @@ import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -25,9 +26,13 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
  */
 public class ElasticsearchConverter {
 
+    public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "year", "language", "documentType"});
+
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
-        if (keyword == null ) keyword = "";
+        if (keyword == null) {
+            keyword = "";
+        }
 
         String escapedKeyword = org.apache.lucene.queryparser.flexible.standard.QueryParserUtil.escape(keyword);
 
@@ -43,11 +48,23 @@ public class ElasticsearchConverter {
         int from = query.getFrom();
         int to = query.getTo();
         String keyword = query.getKeyword();
-        if (keyword == null ) keyword = "";
+        String queryComponent = "";
+        if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
+            queryComponent = 
+                     "    \"match_all\" : { }\n";
+        } else {
 
-        String escapedKeyword = QueryParserUtil.escape(keyword);
-
+            String escapedKeyword = QueryParserUtil.escape(keyword);
+            queryComponent = "        \"query_string\": {\n"
+                    + "           \"query\": \"" + escapedKeyword + "\"\n"
+                    + "        }\n";
+        }
         List<String> facets = query.getFacets();
+
+        if (facets == null || facets.isEmpty()) {
+            query.setFacets(DEFAULT_FACETS);
+        }
+
         Map<String, List<String>> params = query.getParams();
 
         String facetString = "";
@@ -62,6 +79,15 @@ public class ElasticsearchConverter {
             if (facet.equals("journals")) {
                 facetField = "journals.title.raw";
             }
+            if (facet.equals("language")) {
+                facetField = "language.name";
+            }
+            if (facet.equals("year")) {
+                facetField = "year";
+            }
+            if (facet.equals("documentType")) {
+                facetField = "documentType";
+            }
             facetString += "\"" + facet + "Facet\" : { \"terms\" : {\"field\" : \"" + facetField + "\"} },";
         }
         //remove trailing comma
@@ -69,16 +95,27 @@ public class ElasticsearchConverter {
 
         String esQuery = "{\n"
                 + "    \"query\": {\n"
-                + "        \"query_string\": {\n"
-                + "           \"query\": \"" + escapedKeyword + "\"\n"
-                + "        }\n"
-                + "    },\n"
+                + queryComponent
+                + "     },"
                 + "    \"facets\" : {\n"
                 + facetString
-                + "    },\n"
-//                + "    \"fields\": [\n"
-//                + "       \"title\",\"description\"\n"
-//                + "    ],\n"
+                + "    },"
+                + "      \"filter\":{\n"
+                + "        \"bool\":{\n"
+                + "            \"must\":[\n"
+                + "                {   \"exists\" : {\n"
+                + "                        \"field\" : \"fullText\"\n"
+                + "                    }\n"
+                + "                },{\n"
+                + "                    \"term\":{\n"
+                + "                        \"deleted\":\"ALLOWED\"\n"
+                + "                }\n"
+                + "            }]\n"
+                + "        }\n"
+                + "    },    \n"
+                + "    \"_source\": {\n"
+                + "        \"exclude\": [ \"fullText\" ]\n"
+                + "    },"
                 + "    \"from\":" + from + ",\n"
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
@@ -119,20 +156,6 @@ public class ElasticsearchConverter {
             e.printStackTrace();
         }
         return omtdFacets;
-    }
-
-    public static void main(String[] args) {
-        Query omtdQuery = new Query();
-        omtdQuery.setFrom(0);
-        omtdQuery.setTo(10);
-        omtdQuery.setKeyword("semantic web");
-        List<String> qFacets = new ArrayList<>();
-        qFacets.add("authors");
-        qFacets.add("year");
-        omtdQuery.setFacets(qFacets);
-
-        String s = constructElasticsearchQueryFromOmtdQuery(omtdQuery);
-        System.out.println("s = " + s);
     }
 
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
