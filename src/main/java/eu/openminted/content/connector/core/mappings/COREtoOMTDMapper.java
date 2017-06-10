@@ -71,7 +71,7 @@ public class COREtoOMTDMapper {
 //        }
         // -- -- metadata last date updated <-- repository document metadata updated
         metadataHeaderInfo.setMetadataLastDateUpdated(xMLGregorianCalendar);
-        // -- -- metadata record identifier <-- 
+        // -- -- metadata record identifier <--
         MetadataIdentifier metadataIdentifier = new MetadataIdentifier();
         metadataIdentifier.setMetadataIdentifierSchemeName(MetadataIdentifierSchemeNameEnum.OTHER);
         metadataIdentifier.setSchemeURI("");
@@ -98,7 +98,7 @@ public class COREtoOMTDMapper {
         source.setCollectedFrom(relatedRepository);
         source.setSourceMetadataLink(esam.getRepositories().get(0).getSource());
         metadataHeaderInfo.setSourceOfMetadataRecord(source);
-        // -- -- 
+        // -- --
         metadataHeaderInfo.setUserQuery("");
 
         // *** metadata header end
@@ -106,7 +106,7 @@ public class COREtoOMTDMapper {
         // ***
 
         Document document = new Document();
-        
+
         DocumentInfo documentInfo = new DocumentInfo();
         // -- -- abstract
         List<Abstract> abstracts = new ArrayList<>();
@@ -151,7 +151,9 @@ public class COREtoOMTDMapper {
         String accessUrl = "https://core.ac.uk/display/" + esam.getId();
         List<String> accessURLs = new ArrayList<>();
         accessURLs.add(accessUrl);
-        documentDistributionInfo.setAccessURLs(accessURLs);
+        DistributionLoc distributionLoc = new DistributionLoc();
+        distributionLoc.setDistributionURL(accessUrl);
+//        documentDistributionInfo.setAccessURLs(accessURLs);
         // -- -- -- attribution text
         List<AttributionText> attributionTexts = new ArrayList<>();
         AttributionText attributionText = new AttributionText();
@@ -165,36 +167,37 @@ public class COREtoOMTDMapper {
         documentDistributionInfo.setAvailabilityStartDate(null);
 
         // -- -- -- encodings
-        List<CharacterEncodingEnum> encodings = new ArrayList<>();
-        encodings.add(CharacterEncodingEnum.UTF_8);
-        documentDistributionInfo.setCharacterEncodings(encodings);
+//        List<CharacterEncodingEnum> encodings = new ArrayList<>();
+//        encodings.add(CharacterEncodingEnum.UTF_8);
+        documentDistributionInfo.setCharacterEncoding(CharacterEncodingEnum.UTF_8);
         // -- -- -- copyrights
         documentDistributionInfo.setCopyrightStatements(null);
         // -- -- -- distributions
-        List<DistributionMediumEnum> distributions = new ArrayList<>();
-        distributions.add(DistributionMediumEnum.DOWNLOADABLE);
-        distributions.add(DistributionMediumEnum.ACCESSIBLE_THROUGH_INTERFACE);
-        documentDistributionInfo.setDistributionMediums(distributions);
+//        List<DistributionMediumEnum> distributions = new ArrayList<>();
+//        distributions.add(DistributionMediumEnum.DOWNLOADABLE);
+//        distributions.add(DistributionMediumEnum.ACCESSIBLE_THROUGH_INTERFACE);
+        distributionLoc.setDistributionMedium(DistributionMediumEnum.DOWNLOADABLE);
         // -- -- -- download urls
         List<String> dlUrls = new ArrayList<>();
         if (esam.getFullText() != null) {
             dlUrls.add("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
             dlUrls.add(esam.getFullTextIdentifier());
-            documentDistributionInfo.setDownloadURLs(dlUrls);
+            distributionLoc.setDistributionURL("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
+//            documentDistributionInfo.setDownloadURLs(dlUrls);
         }
         // -- -- -- fee
         documentDistributionInfo.setFee(null);
         // -- -- -- fullText
-        FullText fullText = new FullText();
+        FullText2 fullText = new FullText2();
         fullText.setLang(null);
         fullText.setValue(esam.getFullText());
         documentDistributionInfo.setFullText(fullText);
         // -- -- -- mime types
-        List<DataFormatInfo> dataFormatInfos = new ArrayList<>();
+//        List<DataFormatInfo> dataFormatInfos = new ArrayList<>();
         DataFormatInfo dataFormatInfo = new DataFormatInfo();
         dataFormatInfo.setMimeType(MimeTypeEnum.APPLICATION_PDF);
-        dataFormatInfos.add(dataFormatInfo);
-        documentDistributionInfo.setDataFormats(dataFormatInfos);
+//        dataFormatInfos.add(dataFormatInfo);
+        documentDistributionInfo.setDataFormatInfo(dataFormatInfo);
         // -- -- -- rights holders
         documentDistributionInfo.setRightsHolders(null);
         // -- -- -- rights info
@@ -319,7 +322,7 @@ public class COREtoOMTDMapper {
         document.setPublication(documentInfo);
 
         AnnotatedDocumentInfo annotatedDocumentInfo = new AnnotatedDocumentInfo();
-        AnnotationInfo annotationInfo = new AnnotationInfo();        
+        AnnotationInfo annotationInfo = new AnnotationInfo();
         annotatedDocumentInfo.setAnnotationInfo(null);
         annotatedDocumentInfo.setRawPublication(null);
         // set annotation - is empty atm

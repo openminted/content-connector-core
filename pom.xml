@@ -35,6 +35,16 @@
             <artifactId>jest</artifactId>
             <version>1.0.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>6.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>5.2.2</version>
+        </dependency>
     </dependencies>
     
     <repositories>
