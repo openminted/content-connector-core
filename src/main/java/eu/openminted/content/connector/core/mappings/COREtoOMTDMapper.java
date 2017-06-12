@@ -183,6 +183,7 @@ public class COREtoOMTDMapper {
             dlUrls.add("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
             dlUrls.add(esam.getFullTextIdentifier());
             distributionLoc.setDistributionURL("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
+            documentDistributionInfo.setDistributionLoc(distributionLoc);
 //            documentDistributionInfo.setDownloadURLs(dlUrls);
         }
         // -- -- -- fee
