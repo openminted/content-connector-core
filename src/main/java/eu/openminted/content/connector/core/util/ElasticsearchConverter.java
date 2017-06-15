@@ -26,7 +26,7 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
  */
 public class ElasticsearchConverter {
 
-    public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "year", "language", "documentType"});
+    public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "licence", "publicationYear", "documentLanguage", "publicationType"});
 
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
@@ -73,20 +73,23 @@ public class ElasticsearchConverter {
         for (String facet : facets) {
             //special case for some fields (from the multi-field choose the non-analyzed version)
             String facetField = facet;
+            if (facet.equalsIgnoreCase("documentLanguage")) {
+                facetField = "language.name";
+            }
+            if (facet.equalsIgnoreCase("publicationYear")) {
+                facetField = "year";
+            }
+            if (facet.equalsIgnoreCase("publicationType")) {
+                facetField = "documentType";
+            }
+            if (facet.equalsIgnoreCase("licence")) {
+                facetField = "licence";
+            }
             if (facet.equals("authors")) {
                 facetField = "authors.raw";
             }
             if (facet.equals("journals")) {
                 facetField = "journals.title.raw";
-            }
-            if (facet.equals("language")) {
-                facetField = "language.name";
-            }
-            if (facet.equals("year")) {
-                facetField = "year";
-            }
-            if (facet.equals("documentType")) {
-                facetField = "documentType";
             }
             facetString += "\"" + facet + "Facet\" : { \"terms\" : {\"field\" : \"" + facetField + "\"} },";
         }
@@ -126,7 +129,6 @@ public class ElasticsearchConverter {
         List<eu.openminted.registry.domain.Facet> omtdFacets = new ArrayList<>();
 
         try {
-
             JsonObject jsonObject = searchResult.getJsonObject();
             JsonObject facetsJsonObject = jsonObject.getAsJsonObject("facets");
 
@@ -150,7 +152,7 @@ public class ElasticsearchConverter {
                 }
 
                 omtdFacet.setValues(omtdFacetValues);
-
+                omtdFacets.add(omtdFacet);
             }
         } catch (Exception e) {
             e.printStackTrace();

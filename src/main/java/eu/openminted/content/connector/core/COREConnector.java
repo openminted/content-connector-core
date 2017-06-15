@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  *
  * @author lucasanastasiou
  */
-//@Component
+@Component
 public class COREConnector implements ContentConnector {
 
     @Autowired
