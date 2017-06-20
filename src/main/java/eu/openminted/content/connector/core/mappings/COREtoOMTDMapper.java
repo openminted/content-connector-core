@@ -51,11 +51,9 @@ public class COREtoOMTDMapper {
         List<PersonInfo> relatedPersons = new ArrayList<>();
         for (String contributor : esam.getContributors()) {
             PersonInfo relatedPerson = new PersonInfo();
-            Names personNames = new Names();
             Name personName = new Name();
             personName.setValue(contributor);
-            personNames.getName().add(personName);
-            relatedPerson.getNames().add(personNames);
+            relatedPerson.getNames().add(personName);
             relatedPerson.setPersonIdentifiers(null);
             relatedPersons.add(relatedPerson);
         }
@@ -121,9 +119,7 @@ public class COREtoOMTDMapper {
             PersonInfo relatedPerson = new PersonInfo();
             Name personName = new Name();
             personName.setValue(cAuthor);
-            Names personNames = new Names();
-            personNames.getName().add(personName);
-            relatedPerson.getNames().add(personNames);
+            relatedPerson.getNames().add(personName);
             authors.add(relatedPerson);
         }
         documentInfo.setAuthors(relatedPersons);
@@ -136,10 +132,9 @@ public class COREtoOMTDMapper {
         for (String cContributor : esam.getContributors()) {
             ActorInfo contributor = new ActorInfo();
             PersonInfo relatedPerson = new PersonInfo();
-            Names personNames = new Names();
             Name personName = new Name();
             personName.setValue(cContributor);
-            relatedPerson.getNames().add(personNames);
+            relatedPerson.getNames().add(personName);
             contributor.setRelatedPerson(relatedPerson);
             contributor.setRelatedOrganization(null);
         }
