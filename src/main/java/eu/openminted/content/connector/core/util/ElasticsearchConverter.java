@@ -50,8 +50,8 @@ public class ElasticsearchConverter {
         String keyword = query.getKeyword();
         String queryComponent = "";
         if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
-            queryComponent = 
-                     "    \"match_all\" : { }\n";
+            queryComponent =
+                    "    \"match_all\" : { }\n";
         } else {
 
             String escapedKeyword = QueryParserUtil.escape(keyword);
@@ -64,8 +64,6 @@ public class ElasticsearchConverter {
         if (facets == null || facets.isEmpty()) {
             query.setFacets(DEFAULT_FACETS);
         }
-
-        Map<String, List<String>> params = query.getParams();
 
         String facetString = "";
         // for each facet creates a line like:
@@ -112,8 +110,9 @@ public class ElasticsearchConverter {
                 + "                },{\n"
                 + "                    \"term\":{\n"
                 + "                        \"deleted\":\"ALLOWED\"\n"
-                + "                }\n"
-                + "            }]\n"
+                + "                     }\n"
+                + "                }" +
+                "              ]\n"
                 + "        }\n"
                 + "    },    \n"
                 + "    \"_source\": {\n"
@@ -134,7 +133,7 @@ public class ElasticsearchConverter {
 
             for (String f : queryFacets) {
                 eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
-                omtdFacet.setLabel(f + "Facet");
+                omtdFacet.setLabel(f);
                 omtdFacet.setField(f);
 
                 JsonObject fJObj = facetsJsonObject.getAsJsonObject(f + "Facet");
@@ -154,6 +153,20 @@ public class ElasticsearchConverter {
                 omtdFacet.setValues(omtdFacetValues);
                 omtdFacets.add(omtdFacet);
             }
+            eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
+            List<Value> omtdFacetValues = new ArrayList<>();
+
+            omtdFacet.setField("documentType");
+            omtdFacet.setLabel("Document Type");
+
+            String term = "fullText";
+            int count = searchResult.getTotal();
+            Value omtdValue = new Value();
+            omtdValue.setValue(term);
+            omtdValue.setCount(count);
+            omtdFacetValues.add(omtdValue);
+            omtdFacet.setValues(omtdFacetValues);
+            omtdFacets.add(omtdFacet);
         } catch (Exception e) {
             e.printStackTrace();
         }
