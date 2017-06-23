@@ -65,8 +65,6 @@ public class ElasticsearchConverter {
             query.setFacets(DEFAULT_FACETS);
         }
 
-        Map<String, List<String>> params = query.getParams();
-
         String facetString = "";
         // for each facet creates a line like:
         // \"yearFacet\" : { \"terms\" : {\"field\":\"year\"}}
@@ -96,6 +94,23 @@ public class ElasticsearchConverter {
         //remove trailing comma
         facetString = facetString.replaceAll(",$", "");
 
+        // Parameters
+        Map<String, List<String>> params = query.getParams();
+        String paramsString = "";
+        if (params != null) {
+            for (String key : params.keySet()) {
+                if (key.equalsIgnoreCase("documentLanguage")) {
+                    paramsString += ",{\n" +
+                            "\"term\" : {\n" +
+                            "   \"$key\" : \"$value\"" +
+                            "   }\n" +
+                            "  }\n";
+                    paramsString.replace("$key", "language.name");
+                    paramsString.replace("value", params.get(key).get(0));
+                }
+            }
+        }
+
         String esQuery = "{\n"
                 + "    \"query\": {\n"
                 + queryComponent
@@ -112,8 +127,10 @@ public class ElasticsearchConverter {
                 + "                },{\n"
                 + "                    \"term\":{\n"
                 + "                        \"deleted\":\"ALLOWED\"\n"
-                + "                }\n"
-                + "            }]\n"
+                + "                     }\n"
+                + "                 }"
+                + paramsString +
+                            "]\n"
                 + "        }\n"
                 + "    },    \n"
                 + "    \"_source\": {\n"
