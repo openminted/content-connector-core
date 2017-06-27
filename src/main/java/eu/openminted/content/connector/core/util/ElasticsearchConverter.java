@@ -31,7 +31,8 @@ public class ElasticsearchConverter {
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
         if (keyword == null) {
-            keyword = "";
+            keyword = "*";
+            query.setKeyword(keyword);
         }
 
         String escapedKeyword = org.apache.lucene.queryparser.flexible.standard.QueryParserUtil.escape(keyword);
