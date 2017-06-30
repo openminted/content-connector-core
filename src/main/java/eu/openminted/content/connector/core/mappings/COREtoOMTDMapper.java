@@ -147,7 +147,7 @@ public class COREtoOMTDMapper {
         List<String> accessURLs = new ArrayList<>();
         accessURLs.add(accessUrl);
         DistributionLoc distributionLoc = new DistributionLoc();
-        distributionLoc.setDistributionURL(accessUrl);
+        distributionLoc.setDistributionLocation(accessUrl);
 //        documentDistributionInfo.setAccessURLs(accessURLs);
         // -- -- -- attribution text
         List<AttributionText> attributionTexts = new ArrayList<>();
@@ -177,7 +177,7 @@ public class COREtoOMTDMapper {
         if (esam.getFullText() != null) {
             dlUrls.add("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
             dlUrls.add(esam.getFullTextIdentifier());
-            distributionLoc.setDistributionURL("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
+            distributionLoc.setDistributionLocation("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
             documentDistributionInfo.setDistributionLoc(distributionLoc);
 //            documentDistributionInfo.setDownloadURLs(dlUrls);
         }
