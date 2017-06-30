@@ -50,8 +50,8 @@ public class ElasticsearchConverter {
         String keyword = query.getKeyword();
         String queryComponent = "";
         if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
-            queryComponent = 
-                     "    \"match_all\" : { }\n";
+            queryComponent =
+                    "    \"match_all\" : { }\n";
         } else {
 
             String escapedKeyword = QueryParserUtil.escape(keyword);
@@ -99,15 +99,22 @@ public class ElasticsearchConverter {
         String paramsString = "";
         if (params != null) {
             for (String key : params.keySet()) {
+                String paramKey = key;
                 if (key.equalsIgnoreCase("documentLanguage")) {
-                    paramsString += ",{\n" +
-                            "\"term\" : {\n" +
-                            "   \"$key\" : \"$value\"" +
-                            "   }\n" +
-                            "  }\n";
-                    paramsString.replace("$key", "language.name");
-                    paramsString.replace("value", params.get(key).get(0));
+                    paramKey = "language.name";
                 }
+                if (key.equalsIgnoreCase("publicationYear")) {
+                    paramKey = "year";
+                }
+                if (key.equalsIgnoreCase("publicationType")) {
+                    paramKey = "documentType";
+                }
+                if (key.equalsIgnoreCase("licence")) {
+                    paramKey = "licence";
+                    continue;
+                }
+
+                paramsString += "                    ,{ \"match\": { \"" + paramKey + "\": \"" + params.get(key).get(0) + "\" } }\n";
             }
         }
 
@@ -121,16 +128,10 @@ public class ElasticsearchConverter {
                 + "      \"filter\":{\n"
                 + "        \"bool\":{\n"
                 + "            \"must\":[\n"
-                + "                {   \"exists\" : {\n"
-                + "                        \"field\" : \"fullText\"\n"
-                + "                    }\n"
-                + "                },{\n"
-                + "                    \"term\":{\n"
-                + "                        \"deleted\":\"ALLOWED\"\n"
-                + "                     }\n"
-                + "                 }"
-                + paramsString +
-                            "]\n"
+                + "                     { \"exists\" : { \"field\" : \"fullText\" } }\n"
+                + "                    ,{ \"term\": { \"deleted\":\"ALLOWED\" } }\n"
+                + paramsString
+                + "            ]\n"
                 + "        }\n"
                 + "    },    \n"
                 + "    \"_source\": {\n"
@@ -139,6 +140,8 @@ public class ElasticsearchConverter {
                 + "    \"from\":" + from + ",\n"
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
+
+        System.out.println(esQuery);
         return esQuery;
     }
 
@@ -151,7 +154,7 @@ public class ElasticsearchConverter {
 
             for (String f : queryFacets) {
                 eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
-                omtdFacet.setLabel(f + "Facet");
+                omtdFacet.setLabel(f);
                 omtdFacet.setField(f);
 
                 JsonObject fJObj = facetsJsonObject.getAsJsonObject(f + "Facet");
@@ -171,6 +174,20 @@ public class ElasticsearchConverter {
                 omtdFacet.setValues(omtdFacetValues);
                 omtdFacets.add(omtdFacet);
             }
+            eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
+            List<Value> omtdFacetValues = new ArrayList<>();
+
+            omtdFacet.setField("documentType");
+            omtdFacet.setLabel("Document Type");
+
+            String term = "fullText";
+            int count = searchResult.getTotal();
+            Value omtdValue = new Value();
+            omtdValue.setValue(term);
+            omtdValue.setCount(count);
+            omtdFacetValues.add(omtdValue);
+            omtdFacet.setValues(omtdFacetValues);
+            omtdFacets.add(omtdFacet);
         } catch (Exception e) {
             e.printStackTrace();
         }
