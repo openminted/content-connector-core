@@ -120,14 +120,19 @@ public class COREConnectorTest {
         query.getParams().put("licence", new ArrayList<>());
         query.getParams().get("licence").add("Open Access");
         query.getParams().put("publicationYear", new ArrayList<>());
+        query.getParams().put("documentLanguage", new ArrayList<>());
+        query.getParams().put("PublicationType", new ArrayList<>());
         query.getParams().get("publicationYear").add("2010");
+//        query.getParams().get("publicationYear").add("2011");
+        query.getParams().get("documentLanguage").add("english");
+        query.getParams().get("PublicationType").add("research");
 
         query.getFacets().add("Licence");
         query.getFacets().add("DocumentLanguage");
         query.getFacets().add("PublicationType");
         query.getFacets().add("publicationYear");
 
-        query.setKeyword("*");
+        query.setKeyword("digital");
         SearchResult searchResult = cOREConnector.search(query);
 
         if (searchResult.getPublications() != null) {

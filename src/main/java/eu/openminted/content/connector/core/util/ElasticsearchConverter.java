@@ -49,16 +49,111 @@ public class ElasticsearchConverter {
         int to = query.getTo();
         String keyword = query.getKeyword();
         String queryComponent = "";
-        if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
-            queryComponent =
-                    "    \"match_all\" : { }\n";
-        } else {
+        // Parameters
+        Map<String, List<String>> params = query.getParams();
+        String paramsString = "";
+        if (params != null) {
 
-            String escapedKeyword = QueryParserUtil.escape(keyword);
-            queryComponent = "        \"query_string\": {\n"
-                    + "           \"query\": \"" + escapedKeyword + "\"\n"
-                    + "        }\n";
+            paramsString +=
+                    "   \"bool\": {\n" +
+                            "                        \"must\": [\n";
+
+            for (String key : params.keySet()) {
+                String paramKey = key;
+                if (key.equalsIgnoreCase("documentLanguage")) {
+                    paramKey = "language.name";
+                }
+                if (key.equalsIgnoreCase("publicationYear")) {
+                    paramKey = "year";
+                }
+                if (key.equalsIgnoreCase("publicationType")) {
+                    paramKey = "documentType";
+                }
+                if (key.equalsIgnoreCase("licence")) {
+                    paramKey = "licence";
+                    continue;
+                }
+
+                if (params.get(key).size() > 0) {
+                    for (String value : params.get(key)) {
+                        paramsString +=
+                                "                           {\n" +
+                                        "                                \"term\": { \"" + paramKey + "\": \"" + value + "\" }\n" +
+                                        "                           },\n";
+                    }
+                }
+            }
+            //remove trailing comma
+            paramsString = paramsString.replaceAll(",\n$", "");
+            paramsString +=
+                    "\n                        ]}";
         }
+
+
+        if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
+            if (params.size() > 0 && !paramsString.isEmpty()) {
+                queryComponent = paramsString;
+            } else {
+                queryComponent =
+                        "    \"match_all\" : { }\n";
+            }
+        } else {
+            String escapedKeyword = QueryParserUtil.escape(keyword);
+
+            if (params.size() > 0 && !paramsString.isEmpty()) {
+                /*
+                In case there are both a keyword and parameters defined by user,
+                we use the following query schema:
+
+                "bool": {
+                      "must": [
+                        {
+                          "query_string": {
+                            "query": "field:text"
+                          }
+                        },
+                        {
+                            "bool": {
+                                "must": [
+                                    {
+                                        "match":
+                                        {
+                                            "field": "text"
+                                        }
+                                    },
+                                    {
+                                        "match":
+                                        {
+                                            "field": "text"
+                                        }
+                                    }
+                               ]
+                           }
+                        }
+                      ]
+                 }
+                 */
+                queryComponent =
+                        "          \"bool\": {\n"
+                        + "               \"must\": [\n"
+                        + "                {\n"
+                        + "                   \"query_string\": {\n"
+                        + "                         \"query\": \""+ escapedKeyword +"\"\n"
+                        + "                     }\n"
+                        + "                },\n"
+                        + "                {\n" +
+                          "                 " + paramsString + "\n" +
+                          "                }]\n" +
+                          "         }\n";
+
+            } else {
+                queryComponent = "        \"query_string\": {\n"
+                        + "           \"query\": \"" + escapedKeyword + "\"\n"
+                        + "        }\n";
+            }
+        }
+
+        //facets
         List<String> facets = query.getFacets();
 
         if (facets == null || facets.isEmpty()) {
@@ -94,34 +189,10 @@ public class ElasticsearchConverter {
         //remove trailing comma
         facetString = facetString.replaceAll(",$", "");
 
-        // Parameters
-        Map<String, List<String>> params = query.getParams();
-        String paramsString = "";
-        if (params != null) {
-            for (String key : params.keySet()) {
-                String paramKey = key;
-                if (key.equalsIgnoreCase("documentLanguage")) {
-                    paramKey = "language.name";
-                }
-                if (key.equalsIgnoreCase("publicationYear")) {
-                    paramKey = "year";
-                }
-                if (key.equalsIgnoreCase("publicationType")) {
-                    paramKey = "documentType";
-                }
-                if (key.equalsIgnoreCase("licence")) {
-                    paramKey = "licence";
-                    continue;
-                }
-
-                paramsString += "                    ,{ \"match\": { \"" + paramKey + "\": \"" + params.get(key).get(0) + "\" } }\n";
-            }
-        }
-
         String esQuery = "{\n"
                 + "    \"query\": {\n"
                 + queryComponent
-                + "     },"
+                + "     },\n"
                 + "    \"facets\" : {\n"
                 + facetString
                 + "    },"
@@ -130,7 +201,6 @@ public class ElasticsearchConverter {
                 + "            \"must\":[\n"
                 + "                     { \"exists\" : { \"field\" : \"fullText\" } }\n"
                 + "                    ,{ \"term\": { \"deleted\":\"ALLOWED\" } }\n"
-                + paramsString
                 + "            ]\n"
                 + "        }\n"
                 + "    },    \n"

@@ -14,7 +14,7 @@ import org.junit.Test;
 public class ElasticConverterTest {
 
     @Test
-//    @Ignore
+    @Ignore
     public void testConstructElasticsearchQueryFromOmtdQuery() {
         String expectedEmptyQueryString = "{\n"
                 + "    \"query\": {\n"
