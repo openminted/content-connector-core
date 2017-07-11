@@ -210,6 +210,9 @@ public class ElasticsearchConverter {
                 + "    \"from\":" + from + ",\n"
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
+
+
+        System.out.println(esQuery);
         return esQuery;
     }
 
