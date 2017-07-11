@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import eu.openminted.registry.domain.Facet;
-import eu.openminted.registry.domain.Value;
+import eu.openminted.registry.core.domain.Facet;
+import eu.openminted.registry.core.domain.Value;
 import io.searchbox.client.JestClient;
 import org.apache.lucene.util.automaton.LimitedFiniteStringsIterator;
 import org.junit.*;
