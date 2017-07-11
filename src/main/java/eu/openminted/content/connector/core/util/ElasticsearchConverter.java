@@ -7,8 +7,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
-import eu.openminted.registry.domain.Facet;
-import eu.openminted.registry.domain.Value;
+import eu.openminted.registry.core.domain.Facet;
+import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
 
@@ -214,14 +214,14 @@ public class ElasticsearchConverter {
     }
 
     public static List<Facet> getOmtdFacetsFromSearchResult(SearchResult searchResult, List<String> queryFacets) {
-        List<eu.openminted.registry.domain.Facet> omtdFacets = new ArrayList<>();
+        List<Facet> omtdFacets = new ArrayList<>();
 
         try {
             JsonObject jsonObject = searchResult.getJsonObject();
             JsonObject facetsJsonObject = jsonObject.getAsJsonObject("facets");
 
             for (String f : queryFacets) {
-                eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
+                Facet omtdFacet = new Facet();
                 omtdFacet.setLabel(f);
                 omtdFacet.setField(f);
 
@@ -242,7 +242,7 @@ public class ElasticsearchConverter {
                 omtdFacet.setValues(omtdFacetValues);
                 omtdFacets.add(omtdFacet);
             }
-            eu.openminted.registry.domain.Facet omtdFacet = new eu.openminted.registry.domain.Facet();
+            Facet omtdFacet = new Facet();
             List<Value> omtdFacetValues = new ArrayList<>();
 
             omtdFacet.setField("documentType");
