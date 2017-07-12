@@ -55,8 +55,8 @@ public class ElasticsearchConverter {
         if (params != null) {
 
             paramsString +=
-                    "   \"bool\": {\n" +
-                            "                        \"must\": [\n";
+                    "         \"bool\": {\n" +
+                    "              \"must\": [\n";
 
             for (String key : params.keySet()) {
                 String paramKey = key;
@@ -86,7 +86,9 @@ public class ElasticsearchConverter {
             //remove trailing comma
             paramsString = paramsString.replaceAll(",\n$", "");
             paramsString +=
-                    "\n                        ]}";
+                    "\n          ]" +
+                    "\n    }" +
+                    "\n";
         }
 
 
