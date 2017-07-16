@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
+import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
@@ -14,6 +15,7 @@ import io.searchbox.core.SearchResult.Hit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -49,163 +51,124 @@ public class ElasticsearchConverter {
         int to = query.getTo();
         String keyword = query.getKeyword();
         String queryComponent = "";
-        // Parameters
-        Map<String, List<String>> params = query.getParams();
-        String paramsString = "";
-        if (params != null) {
 
-            paramsString +=
-                    "         \"bool\": {\n" +
-                    "              \"must\": [\n";
+        //
+        // Query - either a keyword query or match all
+        //
+        queryComponent += "{\n"
+                + "    \"query\":{\n"
+                + "        \"filtered\":{\n"
+                + "            \"query\": {\n";
+        if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
+            String matchAllQueryComponent = "\"match_all\": {}";
+            queryComponent += matchAllQueryComponent;
+        } else {
+            String escapedKeyword = QueryParserUtil.escape(keyword);
+            String keywordQueryComponent = "\"bool\": {\n"
+                    + "                    \"must\": [\n"
+                    + "                        {\n"
+                    + "                       \"query_string\": {\n"
+                    + "                             \"query\": \"" + escapedKeyword + "\"\n"
+                    + "                         }\n"
+                    + "                    }\n"
+                    + "                    ]   \n"
+                    + "                }\n";
+            queryComponent += keywordQueryComponent;
+        }
+        queryComponent += "},";
+
+        //
+        // Parameters
+        //
+        Map<String, List<String>> params = query.getParams();
+
+        // parameters in ES query are part of a boolean filter in a filtered query
+        String paramsString = "";
+        if (params != null && params.size() > 0) {
 
             for (String key : params.keySet()) {
-                String paramKey = key;
-                if (key.equalsIgnoreCase("documentLanguage")) {
-                    paramKey = "language.name";
-                }
-                if (key.equalsIgnoreCase("publicationYear")) {
-                    paramKey = "year";
-                }
-                if (key.equalsIgnoreCase("publicationType")) {
-                    paramKey = "documentType";
-                }
-                if (key.equalsIgnoreCase("licence")) {
-                    paramKey = "licence";
+                String esParameterName = OMTDtoESMapper.OMTD_TO_ES_PARAMETER_NAMES.get(key);
+                if (esParameterName == null || esParameterName.isEmpty()) {
+                    // a non-existent parameter in the omtd<->ES map was given, skip
                     continue;
                 }
 
+                // each of the values of this parameter becomes a should clause (equivalent of OR in ES lingo)
                 if (params.get(key).size() > 0) {
+                    paramsString += "{\n"
+                            + "\"bool\": {\n"
+                            + "     \"should\": [\n";
                     for (String value : params.get(key)) {
-                        paramsString +=
-                                "                           {\n" +
-                                        "                                \"term\": { \"" + paramKey + "\": \"" + value + "\" }\n" +
-                                        "                           },\n";
+
+                        paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
                     }
+                    //remove trailing comma
+                    paramsString = paramsString.replaceAll(",\n$", "");
+                    paramsString += "]\n"
+                            + "}\n"
+                            + "},\n";
                 }
+
             }
             //remove trailing comma
             paramsString = paramsString.replaceAll(",\n$", "");
-            paramsString +=
-                    "\n          ]" +
-                    "\n    }" +
-                    "\n";
+            paramsString
+                    += "\n          ]"
+                    + "\n    }"
+                    + "\n";
         }
 
+        //
+        // Filter
+        //
+        // apart of default filters (only fulltext items and not deleted) add
+        // the parameters as a filter
+        //
+        String filterQueryComponent = "\"filter\":{\n"
+                + "            \"bool\":{\n"
+                + "                \"must\":[\n"
+                + "                    { \"exists\" : { \"field\" : \"fullText\" } },\n"
+                + "                    { \"term\": { \"deleted\":\"ALLOWED\" } },\n"
+                + paramsString
+                + "                }\n"
+                + "            }\n"
+                + "     },";
 
-        if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
-            if (params.size() > 0 && !paramsString.isEmpty()) {
-                queryComponent = paramsString;
-            } else {
-                queryComponent =
-                        "    \"match_all\" : { }\n";
-            }
-        } else {
-            String escapedKeyword = QueryParserUtil.escape(keyword);
-
-            if (params.size() > 0 && !paramsString.isEmpty()) {
-                /*
-                In case there are both a keyword and parameters defined by user,
-                we use the following query schema:
-
-                "bool": {
-                      "must": [
-                        {
-                          "query_string": {
-                            "query": "field:text"
-                          }
-                        },
-                        {
-                            "bool": {
-                                "must": [
-                                    {
-                                        "match":
-                                        {
-                                            "field": "text"
-                                        }
-                                    },
-                                    {
-                                        "match":
-                                        {
-                                            "field": "text"
-                                        }
-                                    }
-                               ]
-                           }
-                        }
-                      ]
-                 }
-                 */
-                queryComponent =
-                        "          \"bool\": {\n"
-                        + "               \"must\": [\n"
-                        + "                {\n"
-                        + "                   \"query_string\": {\n"
-                        + "                         \"query\": \""+ escapedKeyword +"\"\n"
-                        + "                     }\n"
-                        + "                },\n"
-                        + "                {\n" +
-                          "                 " + paramsString + "\n" +
-                          "                }]\n" +
-                          "         }\n";
-
-            } else {
-                queryComponent = "        \"query_string\": {\n"
-                        + "           \"query\": \"" + escapedKeyword + "\"\n"
-                        + "        }\n";
-            }
-        }
-
-        //facets
+        //        
+        // Facets
+        //
         List<String> facets = query.getFacets();
 
-        if (facets == null || facets.isEmpty()) {
+        if (facets
+                == null || facets.isEmpty()) {
             query.setFacets(DEFAULT_FACETS);
         }
 
         String facetString = "";
+        facetString += " \"facets\" : {";
         // for each facet creates a line like:
         // \"yearFacet\" : { \"terms\" : {\"field\":\"year\"}}
         for (String facet : facets) {
             //special case for some fields (from the multi-field choose the non-analyzed version)
             String facetField = facet;
-            if (facet.equalsIgnoreCase("documentLanguage")) {
-                facetField = "language.name";
-            }
-            if (facet.equalsIgnoreCase("publicationYear")) {
-                facetField = "year";
-            }
-            if (facet.equalsIgnoreCase("publicationType")) {
-                facetField = "documentType";
-            }
-            if (facet.equalsIgnoreCase("licence")) {
-                facetField = "licence";
-            }
-            if (facet.equals("authors")) {
-                facetField = "authors.raw";
-            }
-            if (facet.equals("journals")) {
-                facetField = "journals.title.raw";
+            String knownFacet = OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(facet);
+            if (knownFacet!=null && !knownFacet.isEmpty()){
+                facetField=knownFacet;
             }
             facetString += "\"" + facet + "Facet\" : { \"terms\" : {\"field\" : \"" + facetField + "\"} },";
         }
         //remove trailing comma
         facetString = facetString.replaceAll(",$", "");
-
-        String esQuery = "{\n"
-                + "    \"query\": {\n"
-                + queryComponent
-                + "     },\n"
-                + "    \"facets\" : {\n"
+        facetString += "},";
+        
+        //-------------------------------------------------------
+        //
+        // Combine everything into a filtered query with facets
+        //
+        //-------------------------------------------------------
+        String esQuery = queryComponent
+                + filterQueryComponent
                 + facetString
-                + "    },"
-                + "      \"filter\":{\n"
-                + "        \"bool\":{\n"
-                + "            \"must\":[\n"
-                + "                     { \"exists\" : { \"field\" : \"fullText\" } }\n"
-                + "                    ,{ \"term\": { \"deleted\":\"ALLOWED\" } }\n"
-                + "            ]\n"
-                + "        }\n"
-                + "    },    \n"
                 + "    \"_source\": {\n"
                 + "        \"exclude\": [ \"fullText\" ]\n"
                 + "    },"
@@ -213,8 +176,6 @@ public class ElasticsearchConverter {
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
 
-
-        System.out.println(esQuery);
         return esQuery;
     }
 
@@ -247,11 +208,13 @@ public class ElasticsearchConverter {
                 omtdFacet.setValues(omtdFacetValues);
                 omtdFacets.add(omtdFacet);
             }
-            Facet omtdFacet = new Facet();
+            
+            // manually setting all documents as fulltext
+            Facet documentTypeFacet = new Facet();
             List<Value> omtdFacetValues = new ArrayList<>();
 
-            omtdFacet.setField("documentType");
-            omtdFacet.setLabel("Document Type");
+            documentTypeFacet.setField("documentType");
+            documentTypeFacet.setLabel("Document Type");
 
             String term = "fullText";
             int count = searchResult.getTotal();
@@ -259,8 +222,21 @@ public class ElasticsearchConverter {
             omtdValue.setValue(term);
             omtdValue.setCount(count);
             omtdFacetValues.add(omtdValue);
-            omtdFacet.setValues(omtdFacetValues);
-            omtdFacets.add(omtdFacet);
+            documentTypeFacet.setValues(omtdFacetValues);
+            omtdFacets.add(documentTypeFacet);
+            
+            // manually setting all documents rights as open access
+            Facet rightsFacet = new Facet();
+            rightsFacet.setField("RIGHTS");
+            rightsFacet.setLabel("rights");
+            List<Value> rightsFacetValues = new ArrayList<>();
+            Value rightsValue = new Value();
+            rightsValue.setValue("Open Access");
+            rightsValue.setCount(count);
+            rightsFacetValues.add(rightsValue);
+            rightsFacet.setValues(rightsFacetValues);
+            omtdFacets.add(rightsFacet);
+                    
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -269,9 +245,12 @@ public class ElasticsearchConverter {
 
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
         List<String> publications = new ArrayList<>();
+
         try {
-            List<Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
-            List<Hit<Map, Void>> mapHits = searchResult.getHits(Map.class);
+            List<Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class
+            );
+            List<Hit<Map, Void>> mapHits = searchResult.getHits(Map.class
+            );
             for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
                 if (hit != null && hit.source != null) {
                     publications.add(hit.source.toString());
@@ -285,8 +264,10 @@ public class ElasticsearchConverter {
 
     public static List<ElasticSearchArticleMetadata> getPublicationsFromSearchResult(SearchResult searchResult) {
         List<ElasticSearchArticleMetadata> publications = new ArrayList<>();
+
         try {
-            List<io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class);
+            List<io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void>> hits = searchResult.getHits(ElasticSearchArticleMetadata.class
+            );
             for (io.searchbox.core.SearchResult.Hit<ElasticSearchArticleMetadata, Void> hit : hits) {
                 publications.add(hit.source);
             }
@@ -306,8 +287,10 @@ public class ElasticsearchConverter {
                         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
                         .create();
                 //aaaaaa cannot do gson deserailisation - shall be done manually
+
                 try {
-                    ElasticSearchArticleMetadata esam = gson.fromJson(obj, ElasticSearchArticleMetadata.class);
+                    ElasticSearchArticleMetadata esam = gson.fromJson(obj, ElasticSearchArticleMetadata.class
+                    );
                     results.add(esam);
                 } catch (JsonSyntaxException j) {
                     System.out.println("json syntax exception " + j.getMessage());
@@ -330,6 +313,35 @@ public class ElasticsearchConverter {
                 + "    }\n"
                 + "}";
         return esQuery;
+    }
+
+    public static void main(String args[]) {
+        Query omtdQuery = new Query();
+        omtdQuery.setFrom(1);
+        omtdQuery.setTo(15);
+        omtdQuery.setKeyword("Deep learning");
+//        omtdQuery.setKeyword("*");
+        Map<String, List<String>> omtdParameters = new HashMap<>();
+        List<String> yearsParameter = new ArrayList<>();
+        yearsParameter.add("2012");
+        yearsParameter.add("2013");
+        omtdParameters.put("publicationYear", yearsParameter);
+        List<String> languages = new ArrayList<>();
+        languages.add("english");
+        languages.add("german");
+        omtdParameters.put("documentLanguage", languages);
+
+        omtdQuery.setParams(omtdParameters);
+        omtdQuery.setFacets(DEFAULT_FACETS);
+
+        String esQuery = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
+        System.out.println("esQuery = " + esQuery);
+
+        System.out.println("omt = " + omtdQuery.toString());
+        Gson gson = new Gson();
+        System.out.println(gson.toJson(omtdQuery));
+                
+//        System.out.println("esQuery = " + OMTDtoESMapper.omtdToEsParameterNames.get("documentLanguage"));
     }
 
 }
