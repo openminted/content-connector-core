@@ -8,6 +8,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
+import eu.openminted.content.connector.faceting.OMTDFacetEnum;
+import eu.openminted.content.connector.faceting.OMTDFacetInitializer;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
@@ -140,7 +142,7 @@ public class ElasticsearchConverter {
 
         if (facets
                 == null || facets.isEmpty()) {
-            query.setFacets(DEFAULT_FACETS);
+//            query.setFacets(DEFAULT_FACETS);
         }
 
         String facetString = "";
@@ -211,11 +213,12 @@ public class ElasticsearchConverter {
             // manually setting all documents as fulltext
             Facet documentTypeFacet = new Facet();
             List<Value> omtdFacetValues = new ArrayList<>();
+            OMTDFacetInitializer omtdFacetInitializer = new OMTDFacetInitializer();
 
-            documentTypeFacet.setField("documentType");
-            documentTypeFacet.setLabel("Document Type");
+            documentTypeFacet.setField(OMTDFacetEnum.DOCUMENT_TYPE.value());
+            documentTypeFacet.setLabel(omtdFacetInitializer.getOmtdFacetLabels().get(OMTDFacetEnum.DOCUMENT_TYPE));
 
-            String term = "fullText";
+            String term = "Fulltext";
             int count = searchResult.getTotal();
             Value omtdValue = new Value();
             omtdValue.setValue(term);
@@ -225,16 +228,16 @@ public class ElasticsearchConverter {
             omtdFacets.add(documentTypeFacet);
 
             // manually setting all documents rights as open access
-            Facet rightsFacet = new Facet();
-            rightsFacet.setField("RIGHTS");
-            rightsFacet.setLabel("rights");
-            List<Value> rightsFacetValues = new ArrayList<>();
-            Value rightsValue = new Value();
-            rightsValue.setValue("Open Access");
-            rightsValue.setCount(count);
-            rightsFacetValues.add(rightsValue);
-            rightsFacet.setValues(rightsFacetValues);
-            omtdFacets.add(rightsFacet);
+//            Facet rightsFacet = new Facet();
+//            rightsFacet.setField("RIGHTS");
+//            rightsFacet.setLabel("rights");
+//            List<Value> rightsFacetValues = new ArrayList<>();
+//            Value rightsValue = new Value();
+//            rightsValue.setValue("Open Access");
+//            rightsValue.setCount(count);
+//            rightsFacetValues.add(rightsValue);
+//            rightsFacet.setValues(rightsFacetValues);
+//            omtdFacets.add(rightsFacet);
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -91,13 +91,17 @@ public class CORESearchService {
                     .setParameter(Parameters.SIZE, 25)//each scroll can fetch up to 15*25=375 results (15 the number of shards in core cluster)
                     .setParameter(Parameters.SCROLL, "5m") // 5 minutes should be enough to digest these
                     .build();
-            
+
+            System.out.println("elasticSearchQueryString " + elasticSearchQueryString);
+            System.out.println("SEARCH " + search);
             JestResult result = jestClient.execute(search);
-            
+
             String newScrollId = "";
             newScrollId = result.getJsonObject().get("_scroll_id").getAsString();
             String scrollId = "";
             JsonArray hits = null;
+
+            System.out.println("RESULT " + result.getJsonString());
             do {
                 scrollId = newScrollId;
                 SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m")
@@ -106,7 +110,7 @@ public class CORESearchService {
                 hits = result.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
                 
                 publicationResults.addAll(ElasticsearchConverter.getPublicationsFromResultJsonArray(hits));
-                
+                System.out.println("SIZE OF publicationResults\n\n\n" + publicationResults.size());
                 newScrollId = result.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
                 
             } while (hits != null && hits.size() > 0);
@@ -182,15 +186,18 @@ public class CORESearchService {
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(DocumentMetadataRecord.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-            
+            baos.write("<OMTDPublications>".getBytes());
             for (DocumentMetadataRecord omtdRecord : list) {
                 // convert to XML string and write it to the stream
                 StringWriter sw = new StringWriter();
                 jaxbMarshaller.marshal(omtdRecord, sw);
                 String xmlString = sw.toString();
+
+                System.out.println("XML STRING DOCUMENTMETADATARECORD\n\n" + xmlString);
                 baos.write(xmlString.getBytes());
             }
-            
+            baos.write("</OMTDPublications>".getBytes());
+
             byte[] bytes = baos.toByteArray();
             
             return new ByteArrayInputStream(bytes);
