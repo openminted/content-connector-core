@@ -152,15 +152,15 @@ public class ElasticsearchConverter {
             //special case for some fields (from the multi-field choose the non-analyzed version)
             String facetField = facet;
             String knownFacet = OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(facet);
-            if (knownFacet!=null && !knownFacet.isEmpty()){
-                facetField=knownFacet;
+            if (knownFacet != null && !knownFacet.isEmpty()) {
+                facetField = knownFacet;
             }
             facetString += "\"" + facet + "Facet\" : { \"terms\" : {\"field\" : \"" + facetField + "\"} },";
         }
         //remove trailing comma
         facetString = facetString.replaceAll(",$", "");
         facetString += "},";
-        
+
         //-------------------------------------------------------
         //
         // Combine everything into a filtered query with facets
@@ -208,7 +208,7 @@ public class ElasticsearchConverter {
                 omtdFacet.setValues(omtdFacetValues);
                 omtdFacets.add(omtdFacet);
             }
-            
+
             // manually setting all documents as fulltext
             Facet documentTypeFacet = new Facet();
             List<Value> omtdFacetValues = new ArrayList<>();
@@ -224,7 +224,7 @@ public class ElasticsearchConverter {
             omtdFacetValues.add(omtdValue);
             documentTypeFacet.setValues(omtdFacetValues);
             omtdFacets.add(documentTypeFacet);
-            
+
             // manually setting all documents rights as open access
             Facet rightsFacet = new Facet();
             rightsFacet.setField("RIGHTS");
@@ -236,7 +236,7 @@ public class ElasticsearchConverter {
             rightsFacetValues.add(rightsValue);
             rightsFacet.setValues(rightsFacetValues);
             omtdFacets.add(rightsFacet);
-                    
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -305,10 +305,11 @@ public class ElasticsearchConverter {
     public static String constructFetchByIdentifierElasticsearchQuery(String identifier) {
         String esQuery = "{\n"
                 + "    \"query\": {\n"
-                + "        \"term\": {\n"
-                + "           \"identifiers\": {\n"
-                + "              \"value\": \"" + identifier + "\"\n"
-                + "           }\n"
+                + "        \"bool\":{\n"
+                + "            \"should\": [\n"
+                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
+                + "               {\"term\": {\"id\": {\"value\":\"" + identifier + "\" }}}\n"
+                + "            ]\n"
                 + "        }\n"
                 + "    }\n"
                 + "}";
@@ -340,7 +341,7 @@ public class ElasticsearchConverter {
         System.out.println("omt = " + omtdQuery.toString());
         Gson gson = new Gson();
         System.out.println(gson.toJson(omtdQuery));
-                
+
 //        System.out.println("esQuery = " + OMTDtoESMapper.omtdToEsParameterNames.get("documentLanguage"));
     }
 
