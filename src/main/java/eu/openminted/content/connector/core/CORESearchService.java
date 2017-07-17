@@ -16,8 +16,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.compress.utils.IOUtils;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -33,8 +37,7 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 public class CORESearchService {
 
     @Autowired
-    private
-    JestClient jestClient;
+    private JestClient jestClient;
 
     public SearchResult query(Query query) {
         SearchResult omtdSearchResult = new SearchResult();
@@ -76,7 +79,6 @@ public class CORESearchService {
             searchSourceBuilder.query(queryBuilder);
 //        searchSourceBuilder.fields(fields);
             searchSourceBuilder.fetchSource(null, "fullText");//do not fetch fulltext - will overwhelm the response
-
 
             Search search = new Search.Builder(searchSourceBuilder.toString())
                     .addIndex("articles")
@@ -125,12 +127,39 @@ public class CORESearchService {
         try {
             searchResult = jestClient.execute(search);
         } catch (IOException ex) {
-            System.out.println("ex = " + ex);
-            ex.printStackTrace();
+            Logger.getLogger(CORESearchService.class.getName()).log(Level.SEVERE, null, ex);
         }
         List<ElasticSearchArticleMetadata> publications = ElasticsearchConverter.getPublicationsFromSearchResult(searchResult);
+if (publications==null || publications.isEmpty()){
+    Logger.getLogger(CORESearchService.class.getName()).log(Level.INFO, null, "No article in CORE found with identifier "+identifier);
+    return null;
+}
+        String articlePdfUrl = "";
 
-        return convertListToStream(publications);
+        for (ElasticSearchArticleMetadata esam : publications) {
+            String coreID = esam.getId();
+
+            // find the first non-empty identifier
+            if (coreID != null && !coreID.isEmpty()) {
+                String dlURL = "https://core.ac.uk/download/pdf/" + coreID + ".pdf";
+                articlePdfUrl = dlURL;
+                break;
+            }
+        }
+
+        if (!articlePdfUrl.isEmpty()) {
+            InputStream in = null;
+            try {
+                in = new URL(articlePdfUrl).openStream();
+                return in;
+            } catch (IOException iOException) {
+                Logger.getLogger(CORESearchService.class.getName()).log(Level.SEVERE, null, iOException);
+            } finally {
+                IOUtils.closeQuietly(in);
+            }
+        }
+        // in case the block above failed to return the stream
+        return null;
     }
 
     private InputStream convertListToStream(List<ElasticSearchArticleMetadata> list) throws IOException {
@@ -147,6 +176,5 @@ public class CORESearchService {
 
         return new ByteArrayInputStream(bytes);
     }
-
 
 }
