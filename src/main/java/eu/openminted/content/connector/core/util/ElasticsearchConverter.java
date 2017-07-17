@@ -75,7 +75,7 @@ public class ElasticsearchConverter {
                     + "                }\n";
             queryComponent += keywordQueryComponent;
         }
-        queryComponent += "},";
+        queryComponent += "}";
 
         //
         // Parameters
@@ -85,7 +85,7 @@ public class ElasticsearchConverter {
         // parameters in ES query are part of a boolean filter in a filtered query
         String paramsString = "";
         if (params != null && params.size() > 0) {
-
+            queryComponent+=",";
             for (String key : params.keySet()) {
                 String esParameterName = OMTDtoESMapper.OMTD_TO_ES_PARAMETER_NAMES.get(key);
                 if (esParameterName == null || esParameterName.isEmpty()) {
