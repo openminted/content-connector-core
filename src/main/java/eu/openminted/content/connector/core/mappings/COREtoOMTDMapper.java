@@ -244,20 +244,21 @@ public class COREtoOMTDMapper {
         documentInfo.setInBook(null);
         // -- journal
         JournalInfo relatedJournal = new JournalInfo();
-        for (ElasticSearchJournal esamJ : esam.getJournals()) {
-            List<JournalIdentifier> jIds = new ArrayList<>();
-            for (String esamJournalIdentifier : esamJ.getIdentifiers()) {
-                JournalIdentifier jId = new JournalIdentifier();
-                jId.setValue(esamJournalIdentifier);
-                jIds.add(jId);
-            }
-            List<JournalTitle> jTitles = new ArrayList<>();
-            JournalTitle journalTitle = new JournalTitle();
-            journalTitle.setValue(esamJ.getTitle());
-            jTitles.add(journalTitle);
-            relatedJournal.setIdentifiers(jIds);
-            relatedJournal.setJournalTitles(jTitles);
-        }
+        //to be refactored
+//        for (ElasticSearchJournal esamJ : esam.getJournals()) {
+//            List<JournalIdentifier> jIds = new ArrayList<>();
+//            for (String esamJournalIdentifier : esamJ.getIdentifiers()) {
+//                JournalIdentifier jId = new JournalIdentifier();
+//                jId.setValue(esamJournalIdentifier);
+//                jIds.add(jId);
+//            }
+//            List<JournalTitle> jTitles = new ArrayList<>();
+//            JournalTitle journalTitle = new JournalTitle();
+//            journalTitle.setValue(esamJ.getTitle());
+//            jTitles.add(journalTitle);
+//            relatedJournal.setIdentifiers(jIds);
+//            relatedJournal.setJournalTitles(jTitles);
+//        }
         documentInfo.setJournal(relatedJournal);
         // -- keywords
         documentInfo.setKeywords(null);

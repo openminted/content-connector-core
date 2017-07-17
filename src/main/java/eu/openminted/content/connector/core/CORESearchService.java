@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import org.apache.commons.compress.utils.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -160,7 +160,7 @@ public class CORESearchService {
             } catch (IOException iOException) {
                 Logger.getLogger(CORESearchService.class.getName()).log(Level.SEVERE, null, iOException);
             } finally {
-                IOUtils.closeQuietly(in);
+//                IOUtils.closeQuietly(in);
             }
         }
         // in case the block above failed to return the stream
