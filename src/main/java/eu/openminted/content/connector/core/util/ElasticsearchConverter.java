@@ -111,10 +111,7 @@ public class ElasticsearchConverter {
             }
             //remove trailing comma
             paramsString = paramsString.replaceAll(",\n$", "");
-            paramsString
-                    += "\n          ]"
-                    + "\n    }"
-                    + "\n";
+            
         }
 
         //
@@ -131,6 +128,7 @@ public class ElasticsearchConverter {
                 if (!paramsString.isEmpty()){
                     filterQueryComponent+=","+paramsString;
                 }
+                filterQueryComponent+="]}";
                 filterQueryComponent+= "                }\n"
                 + "            }\n"
                 + "     },";
@@ -333,7 +331,7 @@ public class ElasticsearchConverter {
         languages.add("german");
         omtdParameters.put("documentLanguage", languages);
 
-        omtdQuery.setParams(omtdParameters);
+        omtdQuery.setParams(null);
         omtdQuery.setFacets(DEFAULT_FACETS);
 
         String esQuery = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
