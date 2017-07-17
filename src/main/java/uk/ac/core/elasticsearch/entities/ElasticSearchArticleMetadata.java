@@ -65,6 +65,8 @@ public class ElasticSearchArticleMetadata {
 
     private String oai;
     
+    private String downloadUrl;
+    
     public String getId() {
         return id;
     }
@@ -289,6 +291,15 @@ public class ElasticSearchArticleMetadata {
         this.oai = oai;
     }    
 
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
+
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
+    }
+
+    
     @Override
     public String toString() {
         return "ElasticSearchArticleMetadata{" + "id=" + id + ", authors=" + authors + ", citations=" + citations + ", contributors=" + contributors + ", datePublished=" + datePublished + ", deleted=" + deleted + ", description=" + description + ", fullText=" + fullText + ", fullTextIdentifier=" + fullTextIdentifier + ", identifiers=" + identifiers + ", journals=" + journals + ", language=" + language + ", duplicateId=" + duplicateId + ", publisher=" + publisher + ", rawRecordXml=" + rawRecordXml + ", relations=" + relations + ", repositories=" + repositories + ", repositoryDocument=" + repositoryDocument + ", similarities=" + similarities + ", subjects=" + subjects + ", title=" + title + ", topics=" + topics + ", types=" + types + ", urls=" + urls + ", year=" + year + ", doi=" + doi + ", oai=" + oai + '}';
