@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
+import eu.openminted.content.connector.RightsStmtNameConverter;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.faceting.OMTDFacetEnum;
 import eu.openminted.content.connector.faceting.OMTDFacetInitializer;
@@ -241,7 +242,7 @@ public class ElasticsearchConverter {
             if (f.getField().equalsIgnoreCase("RIGHTS")) {
                 List<Value> rightsFacetValues = new ArrayList<>();
                 Value rightsValue = new Value();
-                rightsValue.setValue("Open Access");
+                rightsValue.setValue(RightsStmtNameConverter.convert("Open Access").value());
                 rightsValue.setCount(count);
                 rightsFacetValues.add(rightsValue);
                 f.setValues(rightsFacetValues);
