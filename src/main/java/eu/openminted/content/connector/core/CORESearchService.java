@@ -106,10 +106,12 @@ public class CORESearchService {
                 scrollId = newScrollId;
                 SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m")
                         .setParameter(Parameters.SIZE, 25).build();
-                result = jestClient.execute(scroll);
-                hits = result.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
                 
+                hits = result.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
                 publicationResults.addAll(ElasticsearchConverter.getPublicationsFromResultJsonArray(hits));
+                
+                result = jestClient.execute(scroll);
+                
                 System.out.println("SIZE OF publicationResults\n\n\n" + publicationResults.size());
                 newScrollId = result.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
                 
