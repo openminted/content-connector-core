@@ -311,18 +311,41 @@ public class ElasticsearchConverter {
     }
 
     public static String constructFetchByIdentifierElasticsearchQuery(String identifier) {
-        String esQuery = "{\n"
+        //check if identifier is a number
+        Integer id=null;
+        try{
+            id = Integer.parseInt(identifier);
+        }catch(NumberFormatException nfe){
+            //not a number
+        }
+        String esQuery="";
+        if (id!=null){
+        
+        esQuery = "{\n"
                 + "    \"query\": {\n"
                 + "        \"bool\":{\n"
                 + "            \"should\": [\n"
                 + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
-                + "               {\"term\": {\"id\": {\"value\":\"" + identifier + "\" }}}\n"
+                + "               {\"term\": {\"id\": {\"value\":\"" + id.toString() + "\" }}}\n"
                 + "            ]\n"
                 + "        }\n"
                 + "    }\n"
                 + "}";
+        
+        }else {
+            esQuery = "{\n"
+                + "    \"query\": {\n"
+                + "        \"bool\":{\n"
+                + "            \"should\": [\n"
+                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
+                + "            ]\n"
+                + "        }\n"
+                + "    }\n"
+                + "}";
+        }
         return esQuery;
     }
+    
 
     public static void main(String args[]) {
         Query omtdQuery = new Query();
