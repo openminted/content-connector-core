@@ -188,6 +188,7 @@ public class CORESearchService {
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(DocumentMetadataRecord.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
             baos.write("<OMTDPublications>".getBytes());
             for (DocumentMetadataRecord omtdRecord : list) {
                 // convert to XML string and write it to the stream
