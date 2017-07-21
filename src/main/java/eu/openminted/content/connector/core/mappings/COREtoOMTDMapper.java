@@ -277,7 +277,10 @@ public class COREtoOMTDMapper {
             Logger.getLogger(COREtoOMTDMapper.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        documentInfo.setPublicationType(null);
+        // CORE has no explicit info about type of publication
+        // setting everything as OTHER
+        documentInfo.setPublicationType(PublicationTypeEnum.OTHER);
+        
         // -- publisher
 //        ActorInfo actorInfo = new ActorInfo();
         OrganizationInfo relatedOrganization = new OrganizationInfo();
