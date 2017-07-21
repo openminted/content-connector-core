@@ -113,7 +113,7 @@ public class ElasticsearchConverter {
             }
             //remove trailing comma
             paramsString = paramsString.replaceAll(",\n$", "");
-            
+
         }
 
         //
@@ -127,11 +127,11 @@ public class ElasticsearchConverter {
                 + "                \"must\":[\n"
                 + "                    { \"exists\" : { \"field\" : \"fullText\" } },\n"
                 + "                    { \"term\": { \"deleted\":\"ALLOWED\" } }\n";
-                if (!paramsString.isEmpty()){
-                    filterQueryComponent+=","+paramsString;
-                }
-                filterQueryComponent+="]}";
-                filterQueryComponent+= "                }\n"
+        if (!paramsString.isEmpty()) {
+            filterQueryComponent += "," + paramsString;
+        }
+        filterQueryComponent += "]}";
+        filterQueryComponent += "                }\n"
                 + "            }\n"
                 + "     },";
 
@@ -227,22 +227,27 @@ public class ElasticsearchConverter {
             documentTypeFacet.setValues(omtdFacetValues);
             omtdFacets.add(documentTypeFacet);
 
-            // manually setting all documents rights as open access
-//            Facet rightsFacet = new Facet();
-//            rightsFacet.setField("RIGHTS");
-//            rightsFacet.setLabel("rights");
-//            List<Value> rightsFacetValues = new ArrayList<>();
-//            Value rightsValue = new Value();
-//            rightsValue.setValue("Open Access");
-//            rightsValue.setCount(count);
-//            rightsFacetValues.add(rightsValue);
-//            rightsFacet.setValues(rightsFacetValues);
-//            omtdFacets.add(rightsFacet);
+            setRightsFacetValue(omtdFacets, count);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         return omtdFacets;
+    }
+
+    private static void setRightsFacetValue(List<Facet> omtdFacets, int count) {
+        // manually setting all documents rights as open access
+        for (Facet f : omtdFacets) {
+            if (f.getField().equalsIgnoreCase("RIGHTS")) {
+                List<Value> rightsFacetValues = new ArrayList<>();
+                Value rightsValue = new Value();
+                rightsValue.setValue("Open Access");
+                rightsValue.setCount(count);
+                rightsFacetValues.add(rightsValue);
+                f.setValues(rightsFacetValues);
+            }
+
+        }
     }
 
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
