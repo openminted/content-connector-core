@@ -337,7 +337,7 @@ public class ElasticsearchConverter {
                 + "    \"query\": {\n"
                 + "        \"bool\":{\n"
                 + "            \"should\": [\n"
-                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
+                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}}\n"
                 + "            ]\n"
                 + "        }\n"
                 + "    }\n"
