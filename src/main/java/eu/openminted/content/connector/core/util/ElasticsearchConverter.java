@@ -7,7 +7,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
-import eu.openminted.content.connector.RightsStmtNameConverter;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.faceting.OMTDFacetEnum;
 import eu.openminted.content.connector.faceting.OMTDFacetInitializer;
