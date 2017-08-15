@@ -67,6 +67,12 @@ public class ElasticSearchArticleMetadata {
     
     private String downloadUrl;
     
+    private String pdfHashValue;
+    
+    private String documentType;
+    
+    private Double documentTypeConfidence;
+    
     public String getId() {
         return id;
     }
@@ -297,6 +303,30 @@ public class ElasticSearchArticleMetadata {
 
     public void setDownloadUrl(String downloadUrl) {
         this.downloadUrl = downloadUrl;
+    }
+
+    public String getPdfHashValue() {
+        return pdfHashValue;
+    }
+
+    public void setPdfHashValue(String pdfHashValue) {
+        this.pdfHashValue = pdfHashValue;
+    }
+
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
+    }
+
+    public Double getDocumentTypeConfidence() {
+        return documentTypeConfidence;
+    }
+
+    public void setDocumentTypeConfidence(Double documentTypeConfidence) {
+        this.documentTypeConfidence = documentTypeConfidence;
     }
 
     

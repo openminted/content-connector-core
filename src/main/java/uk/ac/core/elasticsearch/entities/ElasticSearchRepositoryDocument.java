@@ -1,6 +1,5 @@
 package uk.ac.core.elasticsearch.entities;
 
-import java.util.Date;
 
 /**
  *
@@ -10,11 +9,12 @@ public class ElasticSearchRepositoryDocument {
 
     private Integer pdfStatus;
     private Integer textStatus;
-    private long metadataUpdated;
-    private Date timestamp;
+    private Long metadataUpdated;
+    private Long timestamp;
     private Integer indexed;
     private String deletedStatus;
     private Long pdfSize;
+    private Boolean tdmOnly;
 
     public Integer getPdfStatus() {
         return pdfStatus;
@@ -32,19 +32,19 @@ public class ElasticSearchRepositoryDocument {
         this.textStatus = textStatus;
     }
 
-    public long getMetadataUpdated() {
+    public Long getMetadataUpdated() {
         return metadataUpdated;
     }
 
-    public void setMetadataUpdated(long metadataUpdated) {
+    public void setMetadataUpdated(Long metadataUpdated) {
         this.metadataUpdated = metadataUpdated;
     }
 
-    public Date getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -70,6 +70,14 @@ public class ElasticSearchRepositoryDocument {
 
     public void setPdfSize(Long pdfSize) {
         this.pdfSize = pdfSize;
+    }
+
+    public Boolean isTdmOnly() {
+        return tdmOnly;
+    }
+
+    public void setTdmOnly(Boolean tdmOnly) {
+        this.tdmOnly = tdmOnly;
     }
 
 }

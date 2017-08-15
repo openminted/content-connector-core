@@ -25,9 +25,10 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
 public class COREtoOMTDMapper {
 
     /**
-     * Converts a CORE document to OMTD schema 
+     * Converts a CORE document to OMTD schema
+     *
      * @param esam
-     * @return 
+     * @return
      */
     public static DocumentMetadataRecord convertCOREtoOMTD(ElasticSearchArticleMetadata esam) {
         DocumentMetadataRecord documentMetadataRecord = new DocumentMetadataRecord();
@@ -35,7 +36,7 @@ public class COREtoOMTDMapper {
         // -- HEADER
         MetadataHeaderInfo metadataHeaderInfo = new MetadataHeaderInfo();
         // -- -- metadata creation date <-- repository document metadata updated
-        long time = esam.getRepositoryDocument().getMetadataUpdated();
+        Long time = esam.getRepositoryDocument().getMetadataUpdated();
         Date date = new Date((long) time * 1000);
         GregorianCalendar c = new GregorianCalendar();
         c.setTime(date);
@@ -181,6 +182,12 @@ public class COREtoOMTDMapper {
             documentDistributionInfo.setDistributionLoc(distributionLoc);
 //            documentDistributionInfo.setDownloadURLs(dlUrls);
         }
+
+        if (esam.getPdfHashValue() != null && !esam.getPdfHashValue().isEmpty()) {
+            String pdfHashKey = esam.getPdfHashValue();
+            documentDistributionInfo.setHashkey(pdfHashKey);
+        }
+
         // -- -- -- fee
         documentDistributionInfo.setFee(null);
         // -- -- -- fullText
@@ -214,6 +221,8 @@ public class COREtoOMTDMapper {
         List<DocumentDistributionInfo> documentDistributionInfos = new ArrayList<>();
         documentDistributionInfos.add(documentDistributionInfo);
 
+        documentInfo.setDistributions(documentDistributionInfos);
+        
         // -- languages
         List<Language> languages2 = new ArrayList<>();
         if (esam.getLanguage() != null) {
@@ -280,7 +289,7 @@ public class COREtoOMTDMapper {
         // CORE has no explicit info about type of publication
         // setting everything as OTHER
         documentInfo.setPublicationType(PublicationTypeEnum.OTHER);
-        
+
         // -- publisher
 //        ActorInfo actorInfo = new ActorInfo();
         OrganizationInfo relatedOrganization = new OrganizationInfo();
@@ -329,6 +338,7 @@ public class COREtoOMTDMapper {
         document.setAnnotatedPublication(annotatedDocumentInfo);
 
         documentMetadataRecord.setDocument(document);
+        
         return documentMetadataRecord;
     }
 }

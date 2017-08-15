@@ -3,8 +3,14 @@ package eu.openminted.content.connector.core.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
@@ -14,13 +20,20 @@ import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
+import java.lang.ProcessBuilder.Redirect.Type;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.TimeZone;
 
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
@@ -290,17 +303,14 @@ public class ElasticsearchConverter {
         try {
             for (int i = 0; i < hits.size(); i++) {
                 JsonElement obj = hits.get(i).getAsJsonObject().get("_source");
-                Gson gson = new GsonBuilder()
-                        .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
-                        .create();
-                //aaaaaa cannot do gson deserailisation - shall be done manually
+                Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
 
                 try {
                     ElasticSearchArticleMetadata esam = gson.fromJson(obj, ElasticSearchArticleMetadata.class
                     );
                     results.add(esam);
                 } catch (JsonSyntaxException j) {
-                    System.out.println("json syntax exception " + j.getMessage());
+                    System.out.println("json syntax exception " + j.getMessage());                    
                 }
             }
         } catch (Exception e) {
@@ -311,40 +321,39 @@ public class ElasticsearchConverter {
 
     public static String constructFetchByIdentifierElasticsearchQuery(String identifier) {
         //check if identifier is a number
-        Integer id=null;
-        try{
+        Integer id = null;
+        try {
             id = Integer.parseInt(identifier);
-        }catch(NumberFormatException nfe){
+        } catch (NumberFormatException nfe) {
             //not a number
         }
-        String esQuery="";
-        if (id!=null){
-        
-        esQuery = "{\n"
-                + "    \"query\": {\n"
-                + "        \"bool\":{\n"
-                + "            \"should\": [\n"
-                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
-                + "               {\"term\": {\"id\": {\"value\":\"" + id.toString() + "\" }}}\n"
-                + "            ]\n"
-                + "        }\n"
-                + "    }\n"
-                + "}";
-        
-        }else {
+        String esQuery = "";
+        if (id != null) {
+
             esQuery = "{\n"
-                + "    \"query\": {\n"
-                + "        \"bool\":{\n"
-                + "            \"should\": [\n"
-                + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}}\n"
-                + "            ]\n"
-                + "        }\n"
-                + "    }\n"
-                + "}";
+                    + "    \"query\": {\n"
+                    + "        \"bool\":{\n"
+                    + "            \"should\": [\n"
+                    + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
+                    + "               {\"term\": {\"id\": {\"value\":\"" + id.toString() + "\" }}}\n"
+                    + "            ]\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}";
+
+        } else {
+            esQuery = "{\n"
+                    + "    \"query\": {\n"
+                    + "        \"bool\":{\n"
+                    + "            \"should\": [\n"
+                    + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}}\n"
+                    + "            ]\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}";
         }
         return esQuery;
     }
-    
 
     public static void main(String args[]) {
         Query omtdQuery = new Query();
