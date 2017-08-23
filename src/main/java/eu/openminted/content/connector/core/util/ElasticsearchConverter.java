@@ -254,7 +254,7 @@ public class ElasticsearchConverter {
             if (f.getField().equalsIgnoreCase("RIGHTS")) {
                 List<Value> rightsFacetValues = new ArrayList<>();
                 Value rightsValue = new Value();
-                rightsValue.setValue(RightsStmtNameConverter.convert("Open Access").value());
+                rightsValue.setValue("Open Access");
                 rightsValue.setCount(count);
                 rightsFacetValues.add(rightsValue);
                 f.setValues(rightsFacetValues);
