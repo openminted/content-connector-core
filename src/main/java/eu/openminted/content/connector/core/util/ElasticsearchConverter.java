@@ -3,14 +3,8 @@ package eu.openminted.content.connector.core.util;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
@@ -18,22 +12,16 @@ import eu.openminted.content.connector.faceting.OMTDFacetEnum;
 import eu.openminted.content.connector.faceting.OMTDFacetInitializer;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
+import eu.openminted.registry.domain.PublicationTypeEnum;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
-import java.lang.ProcessBuilder.Redirect.Type;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.TimeZone;
 
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
@@ -102,6 +90,7 @@ public class ElasticsearchConverter {
         if (params != null && params.size() > 0) {
             for (String key : params.keySet()) {
                 String esParameterName = OMTDtoESMapper.OMTD_TO_ES_PARAMETER_NAMES.get(key);
+
                 if (esParameterName == null || esParameterName.isEmpty()) {
                     // a non-existent parameter in the omtd<->ES map was given, skip
                     continue;
@@ -113,6 +102,11 @@ public class ElasticsearchConverter {
                             + "\"bool\": {\n"
                             + "     \"should\": [\n";
                     for (String value : params.get(key)) {
+
+                        // convert language values to lowercase
+                        if (key == OMTDFacetEnum.DOCUMENT_LANG.value()) {
+                            value = value.toLowerCase();
+                        }
 
                         paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
                     }
@@ -242,6 +236,10 @@ public class ElasticsearchConverter {
 
             setRightsFacetValue(omtdFacets, count);
 
+            setDocumentFacetValue(omtdFacets);
+
+            setLanguageFacetValue(omtdFacets, count);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -310,7 +308,7 @@ public class ElasticsearchConverter {
                     );
                     results.add(esam);
                 } catch (JsonSyntaxException j) {
-                    System.out.println("json syntax exception " + j.getMessage());                    
+                    System.out.println("json syntax exception " + j.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -381,7 +379,74 @@ public class ElasticsearchConverter {
         Gson gson = new Gson();
         System.out.println(gson.toJson(omtdQuery));
 
-//        System.out.println("esQuery = " + OMTDtoESMapper.omtdToEsParameterNames.get("documentLanguage"));
+    }
+
+    private static void setDocumentFacetValue(List<Facet> omtdFacets) {
+        // manually mapping CORE document types to OMTD document types        
+        for (Facet f : omtdFacets) {
+            if (f.getField().equalsIgnoreCase("publicationtype")) {
+
+                List<Value> pubTypeValues = f.getValues();
+
+                int researchArticleCount = 0;
+                int thesisArticleCount = 0;
+                int otherCount = 0;
+
+                for (Value ptValue : pubTypeValues) {
+                    if (ptValue.getValue().equalsIgnoreCase("Research")) {
+                        researchArticleCount += ptValue.getCount();
+                    } else if (ptValue.getValue().equalsIgnoreCase("Thesis")) {
+                        thesisArticleCount += ptValue.getCount();
+                    } else {
+                        otherCount += ptValue.getCount();
+                    }
+                }
+
+                Value resArticleValue = new Value();
+//                resArticleValue.setValue(PublicationTypeEnum.RESEARCH_ARTICLE.value());
+                resArticleValue.setValue("Research Article");
+                resArticleValue.setCount(researchArticleCount);
+
+                Value thesisValue = new Value();
+//                thesisValue.setValue(PublicationTypeEnum.THESIS.value());
+                thesisValue.setValue("Thesis");
+                thesisValue.setCount(thesisArticleCount);
+
+                Value otherValue = new Value();
+//                otherValue.setValue(PublicationTypeEnum.OTHER.value());
+                otherValue.setValue("Other");
+                otherValue.setCount(otherCount);
+
+                List<Value> newPubTypeValues = new ArrayList<>();
+                newPubTypeValues.add(resArticleValue);
+                newPubTypeValues.add(thesisValue);
+                newPubTypeValues.add(otherValue);
+                f.setValues(newPubTypeValues);
+            }
+        }
+
+    }
+
+    private static void setLanguageFacetValue(List<Facet> omtdFacets, int count) {
+        // manually setting undetermined language as :
+        // undetermined = total - sum(known_languages)
+        for (Facet f : omtdFacets) {
+            if (f.getField().equalsIgnoreCase("documentlanguage")) {
+                List<Value> langFacetValues = f.getValues();
+
+                int langCount = 0;
+                for (Value langValue : langFacetValues) {
+                    langCount += langValue.getCount();
+                }
+
+                Value langValue = new Value();
+                langValue.setValue("Undetermined");
+                langValue.setCount(count - langCount);
+                langFacetValues.add(langValue);
+                f.setValues(langFacetValues);
+            }
+
+        }
     }
 
 }
