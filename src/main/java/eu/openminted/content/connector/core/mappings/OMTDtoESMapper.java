@@ -1,6 +1,6 @@
 package eu.openminted.content.connector.core.mappings;
 
-import eu.openminted.content.connector.faceting.OMTDFacetEnum;
+import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
 
 import java.util.HashMap;
 import java.util.Map;

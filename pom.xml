@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>eu.openminted</groupId>
-            <artifactId>content-connector-api</artifactId>
+            <artifactId>content-connector-utils</artifactId>
             <version>[0.0.1-SNAPSHOT, )</version>
         </dependency>
         <dependency>
