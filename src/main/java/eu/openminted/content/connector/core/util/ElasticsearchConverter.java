@@ -9,10 +9,9 @@ import com.google.gson.JsonSyntaxException;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
-import eu.openminted.content.connector.utils.faceting.OMTDFacetInitializer;
+import eu.openminted.content.connector.utils.faceting.OMTDFacetLabels;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
-import eu.openminted.registry.domain.PublicationTypeEnum;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
 
@@ -220,7 +219,7 @@ public class ElasticsearchConverter {
             // manually setting all documents as fulltext
             Facet documentTypeFacet = new Facet();
             List<Value> omtdFacetValues = new ArrayList<>();
-            OMTDFacetInitializer omtdFacetInitializer = new OMTDFacetInitializer();
+            OMTDFacetLabels omtdFacetInitializer = new OMTDFacetLabels();
 
             documentTypeFacet.setField(OMTDFacetEnum.DOCUMENT_TYPE.value());
             documentTypeFacet.setLabel(omtdFacetInitializer.getOmtdFacetLabels().get(OMTDFacetEnum.DOCUMENT_TYPE));
