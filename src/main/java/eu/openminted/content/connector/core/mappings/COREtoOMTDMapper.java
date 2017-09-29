@@ -18,6 +18,7 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
 
 import org.apache.commons.lang.StringEscapeUtils;
+
 /**
  *
  * @author lucasanastasiou
@@ -91,11 +92,17 @@ public class COREtoOMTDMapper {
             List<RepositoryIdentifier> repositoryIdentifiers = new ArrayList<>();
             RepositoryIdentifier repositoryIdentifier = new RepositoryIdentifier();
             repositoryIdentifier.setValue("" + repo.getId());
+            repositoryIdentifier.setRepositoryIdentifierSchemeName(RepositoryIdentifierSchemeNameEnum.OTHER);
             repositoryIdentifiers.add(repositoryIdentifier);
             relatedRepository.setRepositoryIdentifiers(repositoryIdentifiers);
         }
         source.setCollectedFrom(relatedRepository);
-        source.setSourceMetadataLink(esam.getRepositories().get(0).getSource());
+        List<String> urls = esam.getUrls();
+        if (urls != null && !urls.isEmpty()) {
+            if (urls.get(0) != null && !urls.get(0).isEmpty()) {
+                source.setSourceMetadataLink(esam.getUrls().get(0));
+            }
+        }
         metadataHeaderInfo.setSourceOfMetadataRecord(source);
         // -- --
         metadataHeaderInfo.setUserQuery("");
@@ -224,7 +231,7 @@ public class COREtoOMTDMapper {
         documentDistributionInfos.add(documentDistributionInfo);
 
         documentInfo.setDistributions(documentDistributionInfos);
-        
+
         // -- languages
         List<Language> languages2 = new ArrayList<>();
         if (esam.getLanguage() != null) {
@@ -233,7 +240,7 @@ public class COREtoOMTDMapper {
             language.setLanguageTag(esam.getLanguage().getName());
             languages2.add(language);
             documentInfo.setDocumentLanguages(languages2);
-        }else {
+        } else {
 
             Language language = new Language();
             language.setLanguageId("und");
@@ -347,7 +354,7 @@ public class COREtoOMTDMapper {
         document.setAnnotatedPublication(annotatedDocumentInfo);
 
         documentMetadataRecord.setDocument(document);
-        
+
         return documentMetadataRecord;
     }
 }
