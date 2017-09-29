@@ -73,8 +73,8 @@ public class CORESearchService {
             omtdSearchResult.setFrom(query.getFrom());
             omtdSearchResult.setTo(query.getTo());
 
-            omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
-            omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+            omtdSearchResult.setPublications(elasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
+            omtdSearchResult.setFacets(elasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
 
             omtdSearchResult.setTotalHits(searchResult.getTotal());
         } catch (IOException ex) {
@@ -116,7 +116,7 @@ public class CORESearchService {
                         .setParameter(Parameters.SIZE, 25).build();
 
                 hits = result.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
-                publicationResults.addAll(ElasticsearchConverter.getPublicationsFromResultJsonArray(hits));
+                publicationResults.addAll(elasticsearchConverter.getPublicationsFromResultJsonArray(hits));
 
                 result = jestClient.execute(scroll);
 
@@ -147,7 +147,7 @@ public class CORESearchService {
         } catch (IOException ex) {
             Logger.getLogger(CORESearchService.class.getName()).log(Level.SEVERE, null, ex);
         }
-        List<ElasticSearchArticleMetadata> publications = ElasticsearchConverter.getPublicationsFromSearchResult(searchResult);
+        List<ElasticSearchArticleMetadata> publications = elasticsearchConverter.getPublicationsFromSearchResult(searchResult);
         if (publications == null || publications.isEmpty()) {
             logger.log(Level.INFO, null, "No article in CORE found with identifier " + identifier);
             return null;

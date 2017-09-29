@@ -194,7 +194,7 @@ public class ElasticsearchConverter {
         return esQuery;
     }
 
-    public static List<Facet> getOmtdFacetsFromSearchResult(SearchResult searchResult, List<String> queryFacets) {
+    public List<Facet> getOmtdFacetsFromSearchResult(SearchResult searchResult, List<String> queryFacets) {
         List<Facet> omtdFacets = new ArrayList<>();
 
         try {
@@ -287,7 +287,7 @@ public class ElasticsearchConverter {
         return publications;
     }
 
-    public static List<ElasticSearchArticleMetadata> getPublicationsFromSearchResult(SearchResult searchResult) {
+    public List<ElasticSearchArticleMetadata> getPublicationsFromSearchResult(SearchResult searchResult) {
         List<ElasticSearchArticleMetadata> publications = new ArrayList<>();
 
         try {
@@ -302,7 +302,7 @@ public class ElasticsearchConverter {
         return publications;
     }
 
-    public static List<ElasticSearchArticleMetadata> getPublicationsFromResultJsonArray(JsonArray hits) {
+    public List<ElasticSearchArticleMetadata> getPublicationsFromResultJsonArray(JsonArray hits) {
         java.util.Random random = new Random();
         List<ElasticSearchArticleMetadata> results = new ArrayList<>();
         try {
@@ -406,7 +406,7 @@ public class ElasticsearchConverter {
 
     }
 
-    private static void setLanguageFacetValue(List<Facet> omtdFacets, int count) {
+    private void setLanguageFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting undetermined language as :
         // undetermined = total - sum(known_languages)
         for (Facet f : omtdFacets) {
@@ -415,6 +415,9 @@ public class ElasticsearchConverter {
 
                 int langCount = 0;
                 for (Value langValue : langFacetValues) {
+                    String code = langValue.getValue();
+                    String lName = languageUtils.getLangCodeToName().get(code);
+                    langValue.setValue(lName);
                     langCount += langValue.getCount();
                 }
 
