@@ -10,6 +10,7 @@ import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
 import eu.openminted.content.connector.utils.faceting.OMTDFacetLabels;
+import eu.openminted.content.connector.utils.language.LanguageUtils;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
@@ -23,13 +24,19 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
 /**
  * @author lucasanastasiou
  */
+@Service
 public class ElasticsearchConverter {
 
+    @Autowired
+    private LanguageUtils languageUtils;
+    
     public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "licence", "publicationYear", "documentLanguage", "publicationType"});
 
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
@@ -48,7 +55,7 @@ public class ElasticsearchConverter {
         return keyword;
     }
 
-    public static String constructElasticsearchQueryFromOmtdQuery(Query query) {
+    public String constructElasticsearchQueryFromOmtdQuery(Query query) {
         int from = query.getFrom();
         int to = query.getTo();
         String keyword = query.getKeyword();
@@ -105,6 +112,7 @@ public class ElasticsearchConverter {
                         // convert language values to lowercase
                         if (key == OMTDFacetEnum.DOCUMENT_LANG.value()) {
                             value = value.toLowerCase();
+                            value = languageUtils.getLangNameToCode().get(value);
                         }
 
                         paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
@@ -350,34 +358,6 @@ public class ElasticsearchConverter {
                     + "}";
         }
         return esQuery;
-    }
-
-    public static void main(String args[]) {
-        Query omtdQuery = new Query();
-        omtdQuery.setFrom(1);
-        omtdQuery.setTo(15);
-        omtdQuery.setKeyword("Deep learning");
-//        omtdQuery.setKeyword("*");
-        Map<String, List<String>> omtdParameters = new HashMap<>();
-        List<String> yearsParameter = new ArrayList<>();
-        yearsParameter.add("2012");
-        yearsParameter.add("2013");
-        omtdParameters.put("publicationYear", yearsParameter);
-        List<String> languages = new ArrayList<>();
-        languages.add("english");
-        languages.add("german");
-        omtdParameters.put("documentLanguage", languages);
-
-        omtdQuery.setParams(null);
-        omtdQuery.setFacets(DEFAULT_FACETS);
-
-        String esQuery = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
-        System.out.println("esQuery = " + esQuery);
-
-        System.out.println("omt = " + omtdQuery.toString());
-        Gson gson = new Gson();
-        System.out.println(gson.toJson(omtdQuery));
-
     }
 
     private static void setDocumentFacetValue(List<Facet> omtdFacets) {

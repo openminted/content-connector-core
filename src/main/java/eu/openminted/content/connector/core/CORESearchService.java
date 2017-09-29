@@ -41,9 +41,14 @@ public class CORESearchService {
     private JestClient jestClient;
 
     @Autowired
+    private COREtoOMTDMapper cOREtoOMTDMapper;
+    
+    @Autowired
     private COREConnectorConfiguration cOREConnectorConfiguration;
     private Integer contentLimit;
 
+    @Autowired
+    private ElasticsearchConverter elasticsearchConverter;
     @PostConstruct
     private void init() {
         this.contentLimit = cOREConnectorConfiguration.CONTENT_LIMIT;
@@ -54,7 +59,7 @@ public class CORESearchService {
     public SearchResult query(Query query) {
         SearchResult omtdSearchResult = new SearchResult();
 
-        String elasticSearchQueryString = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(query);
+        String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(query);
 
         Search search = new Search.Builder(elasticSearchQueryString)
                 .addIndex("articles_2017_08_03")
@@ -88,7 +93,7 @@ public class CORESearchService {
             omtdQuery.setFrom(1);
             omtdQuery.setTo(25);
 
-            String elasticSearchQueryString = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
+            String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
 
             Search search = new Search.Builder(elasticSearchQueryString)
                     .addIndex("articles_2017_08_03")
@@ -179,7 +184,7 @@ public class CORESearchService {
         // convert to OMTD share schema
         List<DocumentMetadataRecord> omtdRecords = new ArrayList<>();
         for (ElasticSearchArticleMetadata esam : publicationResults) {
-            DocumentMetadataRecord omtdRecord = COREtoOMTDMapper.convertCOREtoOMTD(esam);
+            DocumentMetadataRecord omtdRecord = cOREtoOMTDMapper.convertCOREtoOMTD(esam);
             omtdRecords.add(omtdRecord);
         }
         return omtdRecords;

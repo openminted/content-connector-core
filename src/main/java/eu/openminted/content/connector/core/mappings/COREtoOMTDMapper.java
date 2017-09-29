@@ -1,5 +1,6 @@
 package eu.openminted.content.connector.core.mappings;
 
+import eu.openminted.content.connector.utils.language.LanguageUtils;
 import eu.openminted.registry.domain.*;
 
 import java.text.DateFormat;
@@ -18,20 +19,26 @@ import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  *
  * @author lucasanastasiou
  */
+@Service
 public class COREtoOMTDMapper {
 
+    @Autowired
+    LanguageUtils languageUtils;
+    
     /**
      * Converts a CORE document to OMTD schema
      *
      * @param esam
      * @return
      */
-    public static DocumentMetadataRecord convertCOREtoOMTD(ElasticSearchArticleMetadata esam) {
+    public DocumentMetadataRecord convertCOREtoOMTD(ElasticSearchArticleMetadata esam) {
         DocumentMetadataRecord documentMetadataRecord = new DocumentMetadataRecord();
 
         // -- HEADER
@@ -236,8 +243,8 @@ public class COREtoOMTDMapper {
         List<Language> languages2 = new ArrayList<>();
         if (esam.getLanguage() != null) {
             Language language = new Language();
-            language.setLanguageId(esam.getLanguage().getCode());
-            language.setLanguageTag(esam.getLanguage().getName());
+            language.setLanguageId(getOMTDLanguageCode(esam.getLanguage().getCode()));
+            language.setLanguageTag(getOMTDLanguageTag(getOMTDLanguageCode(esam.getLanguage().getCode())));
             languages2.add(language);
             documentInfo.setDocumentLanguages(languages2);
         } else {
@@ -356,5 +363,15 @@ public class COREtoOMTDMapper {
         documentMetadataRecord.setDocument(document);
 
         return documentMetadataRecord;
+    }
+    private static String getOMTDLanguageCode(String langCode){
+       
+        if (langCode.equalsIgnoreCase("zh-cn") || langCode.equalsIgnoreCase("zh-tw")){
+            return "zh";
+        }
+        return langCode;
+    }
+    private String getOMTDLanguageTag(String langCode){
+        return languageUtils.getLangCodeToName().get(langCode);
     }
 }

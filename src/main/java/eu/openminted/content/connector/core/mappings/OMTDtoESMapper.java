@@ -15,7 +15,7 @@ public class OMTDtoESMapper {
 
     static {
         OMTD_TO_ES_PARAMETER_NAMES = new HashMap<>();
-        OMTD_TO_ES_PARAMETER_NAMES.put(OMTDFacetEnum.DOCUMENT_LANG.value(), "language.name");
+        OMTD_TO_ES_PARAMETER_NAMES.put(OMTDFacetEnum.DOCUMENT_LANG.value(), "language.code");
         OMTD_TO_ES_PARAMETER_NAMES.put(OMTDFacetEnum.PUBLICATION_YEAR.value(), "year");
         OMTD_TO_ES_PARAMETER_NAMES.put(OMTDFacetEnum.PUBLICATION_TYPE.value(), "documentType");
 //        omtdToEsParameterNames.put("","");
@@ -26,7 +26,7 @@ public class OMTDtoESMapper {
 
     static {
         OMTD_TO_ES_FACETS_NAMES = new HashMap<>();
-        OMTD_TO_ES_FACETS_NAMES.put(OMTDFacetEnum.DOCUMENT_LANG.value(), "language.name");
+        OMTD_TO_ES_FACETS_NAMES.put(OMTDFacetEnum.DOCUMENT_LANG.value(), "language.code");
         OMTD_TO_ES_FACETS_NAMES.put(OMTDFacetEnum.PUBLICATION_YEAR.value(), "year");
         OMTD_TO_ES_FACETS_NAMES.put(OMTDFacetEnum.RIGHTS_STMT_NAME.value(), "licence");
         OMTD_TO_ES_FACETS_NAMES.put(OMTDFacetEnum.PUBLICATION_TYPE.value(), "documentType");

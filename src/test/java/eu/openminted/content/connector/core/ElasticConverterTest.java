@@ -145,10 +145,11 @@ public class ElasticConverterTest {
         omtdQuery.setTo(10);
         omtdQuery.setKeyword("");
         omtdQuery.setFacets(DEFAULT_FACETS);
-        String constructedEmptyQueryString = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
+        ElasticsearchConverter elasticsearchConverter = new ElasticsearchConverter();
+        String constructedEmptyQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
 
         omtdQuery.setKeyword("random");
-        String constructedRandomQueryString = ElasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
+        String constructedRandomQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
 
         System.out.println("cleaned empty = " + replaceEmptyAndNewLines(constructedEmptyQueryString));
         System.out.println("cleaned random = " + replaceEmptyAndNewLines(constructedRandomQueryString));
