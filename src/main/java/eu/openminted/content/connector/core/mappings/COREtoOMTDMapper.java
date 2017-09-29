@@ -15,9 +15,9 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
-import uk.ac.core.elasticsearch.entities.ElasticSearchJournal;
 import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
 
+import org.apache.commons.lang.StringEscapeUtils;
 /**
  *
  * @author lucasanastasiou
@@ -193,7 +193,9 @@ public class COREtoOMTDMapper {
         // -- -- -- fullText
         FullText2 fullText = new FullText2();
         fullText.setLang(null);
-        fullText.setValue(esam.getFullText());
+        String fullTextString = esam.getFullText();
+        String fullTextStringEscaped = StringEscapeUtils.escapeXml(fullTextString);
+        fullText.setValue(fullTextStringEscaped);
         documentDistributionInfo.setFullText(fullText);
         // -- -- -- mime types
 //        List<DataFormatInfo> dataFormatInfos = new ArrayList<>();
@@ -229,6 +231,13 @@ public class COREtoOMTDMapper {
             Language language = new Language();
             language.setLanguageId(esam.getLanguage().getCode());
             language.setLanguageTag(esam.getLanguage().getName());
+            languages2.add(language);
+            documentInfo.setDocumentLanguages(languages2);
+        }else {
+
+            Language language = new Language();
+            language.setLanguageId("und");
+            language.setLanguageTag("Undetermined");
             languages2.add(language);
             documentInfo.setDocumentLanguages(languages2);
         }
