@@ -416,12 +416,14 @@ public class ElasticsearchConverter {
                 for (Value langValue : langFacetValues) {
                     String code = langValue.getValue().toLowerCase();
                     String lName = languageUtils.getLangCodeToName().get(code);
-                    langValue.setValue(lName);
+                    langValue.setValue(code);
+                    langValue.setLabel(lName);
                     langCount += langValue.getCount();
                 }
 
                 Value langValue = new Value();
-                langValue.setValue("Undetermined");
+                langValue.setLabel("Undetermined");
+                langValue.setValue("und");
                 langValue.setCount(count - langCount);
                 langFacetValues.add(langValue);
                 f.setValues(langFacetValues);
