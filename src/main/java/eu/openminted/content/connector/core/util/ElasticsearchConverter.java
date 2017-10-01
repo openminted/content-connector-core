@@ -419,7 +419,8 @@ public class ElasticsearchConverter {
                 }
 
                 Value langValue = new Value();
-                langValue.setValue("Undetermined");
+                langValue.setLabel("Undetermined");
+                langValue.setValue("und");
                 langValue.setCount(count - langCount);
                 langFacetValues.add(langValue);
                 f.setValues(langFacetValues);
