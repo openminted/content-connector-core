@@ -134,7 +134,7 @@ public class CORESearchService {
 
     InputStream fetchByIdentifier(String identifier) throws IOException {
 
-        String elasticSearchQueryString = ElasticsearchConverter.constructFetchByIdentifierElasticsearchQuery(identifier);
+        String elasticSearchQueryString = elasticsearchConverter.constructFetchByIdentifierElasticsearchQuery(identifier);
 
         Search search = new Search.Builder(elasticSearchQueryString)
                 .addIndex("articles_2017_08_03")

@@ -2,7 +2,6 @@ package eu.openminted.content.connector.core;
 
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.util.ElasticsearchConverter;
-import static eu.openminted.content.connector.core.util.ElasticsearchConverter.DEFAULT_FACETS;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -144,7 +143,7 @@ public class ElasticConverterTest {
         omtdQuery.setFrom(0);
         omtdQuery.setTo(10);
         omtdQuery.setKeyword("");
-        omtdQuery.setFacets(DEFAULT_FACETS);
+        omtdQuery.setFacets(ElasticsearchConverter.DEFAULT_FACETS);
         ElasticsearchConverter elasticsearchConverter = new ElasticsearchConverter();
         String constructedEmptyQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
 

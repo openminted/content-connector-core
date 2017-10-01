@@ -18,7 +18,6 @@ import io.searchbox.core.SearchResult.Hit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -39,7 +38,7 @@ public class ElasticsearchConverter {
     
     public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "licence", "publicationYear", "documentLanguage", "publicationType"});
 
-    public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
+    public String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
         if (keyword == null) {
             keyword = "";
@@ -253,7 +252,7 @@ public class ElasticsearchConverter {
         return omtdFacets;
     }
 
-    private static void setRightsFacetValue(List<Facet> omtdFacets, int count) {
+    private void setRightsFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting all documents rights as open access
         for (Facet f : omtdFacets) {
             if (f.getField().equalsIgnoreCase("RIGHTS")) {
@@ -268,7 +267,7 @@ public class ElasticsearchConverter {
         }
     }
 
-    public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
+    public  List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
         List<String> publications = new ArrayList<>();
 
         try {
@@ -324,7 +323,7 @@ public class ElasticsearchConverter {
         return results;
     }
 
-    public static String constructFetchByIdentifierElasticsearchQuery(String identifier) {
+    public String constructFetchByIdentifierElasticsearchQuery(String identifier) {
         //check if identifier is a number
         Integer id = null;
         try {
@@ -360,7 +359,7 @@ public class ElasticsearchConverter {
         return esQuery;
     }
 
-    private static void setDocumentFacetValue(List<Facet> omtdFacets) {
+    private void setDocumentFacetValue(List<Facet> omtdFacets) {
         // manually mapping CORE document types to OMTD document types        
         for (Facet f : omtdFacets) {
             if (f.getField().equalsIgnoreCase("publicationtype")) {
@@ -415,7 +414,7 @@ public class ElasticsearchConverter {
 
                 int langCount = 0;
                 for (Value langValue : langFacetValues) {
-                    String code = langValue.getValue();
+                    String code = langValue.getValue().toLowerCase();
                     String lName = languageUtils.getLangCodeToName().get(code);
                     langValue.setValue(lName);
                     langCount += langValue.getCount();
