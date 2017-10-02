@@ -112,7 +112,7 @@ public class ElasticsearchConverter {
                         // convert language values to lowercase
                         if (key == OMTDFacetEnum.DOCUMENT_LANG.value()) {
                             value = value.toLowerCase();
-                            value = languageUtils.getLangNameToCode().get(value);
+//                            value = languageUtils.getLangNameToCode().get(value);
                         }
 
                         paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
