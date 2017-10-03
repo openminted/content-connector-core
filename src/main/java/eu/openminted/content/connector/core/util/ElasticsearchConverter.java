@@ -111,8 +111,11 @@ public class ElasticsearchConverter {
 
                         // convert language values to lowercase
                         if (key == OMTDFacetEnum.DOCUMENT_LANG.value()) {
-                            value = value.toLowerCase();
-//                            value = languageUtils.getLangNameToCode().get(value);
+
+                            if (languageUtils.getLangNameToCode().containsKey(value))
+                                value = languageUtils.getLangNameToCode().get(value);
+                            else
+                                value = value.toLowerCase();
                         }
 
                         paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
@@ -216,6 +219,7 @@ public class ElasticsearchConverter {
                     int count = fTermElement.get("count").getAsInt();
                     Value omtdValue = new Value();
                     omtdValue.setValue(term);
+                    omtdValue.setLabel(term);
                     omtdValue.setCount(count);
                     omtdFacetValues.add(omtdValue);
                 }
@@ -236,6 +240,7 @@ public class ElasticsearchConverter {
             int count = searchResult.getTotal();
             Value omtdValue = new Value();
             omtdValue.setValue(term);
+            omtdValue.setLabel(term);
             omtdValue.setCount(count);
             omtdFacetValues.add(omtdValue);
             documentTypeFacet.setValues(omtdFacetValues);
@@ -260,6 +265,7 @@ public class ElasticsearchConverter {
                 List<Value> rightsFacetValues = new ArrayList<>();
                 Value rightsValue = new Value();
                 rightsValue.setValue("Open Access");
+                rightsValue.setLabel("Open Access");
                 rightsValue.setCount(count);
                 rightsFacetValues.add(rightsValue);
                 f.setValues(rightsFacetValues);
@@ -384,16 +390,19 @@ public class ElasticsearchConverter {
                 Value resArticleValue = new Value();
 //                resArticleValue.setValue(PublicationTypeEnum.RESEARCH_ARTICLE.value());
                 resArticleValue.setValue("Research Article");
+                resArticleValue.setLabel("Research Article");
                 resArticleValue.setCount(researchArticleCount);
 
                 Value thesisValue = new Value();
 //                thesisValue.setValue(PublicationTypeEnum.THESIS.value());
                 thesisValue.setValue("Thesis");
+                thesisValue.setLabel("Thesis");
                 thesisValue.setCount(thesisArticleCount);
 
                 Value otherValue = new Value();
 //                otherValue.setValue(PublicationTypeEnum.OTHER.value());
                 otherValue.setValue("Other");
+                otherValue.setLabel("Other");
                 otherValue.setCount(otherCount);
 
                 List<Value> newPubTypeValues = new ArrayList<>();
@@ -409,19 +418,25 @@ public class ElasticsearchConverter {
     private static void setLanguageFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting undetermined language as :
         // undetermined = total - sum(known_languages)
+        LanguageUtils languageUtils = new LanguageUtils();
         for (Facet f : omtdFacets) {
             if (f.getField().equalsIgnoreCase("documentlanguage")) {
                 List<Value> langFacetValues = f.getValues();
 
                 int langCount = 0;
                 for (Value langValue : langFacetValues) {
-                    langCount += langValue.getCount();
+
+                    if (languageUtils.getLangCodeToName().containsKey(langValue.getValue()))
+                        langValue.setLabel(languageUtils.getLangCodeToName().get(langValue.getValue()));
+                    else
+                        langCount += langValue.getCount();
                 }
 
                 Value langValue = new Value();
                 langValue.setLabel("Undetermined");
                 langValue.setValue("und");
-                langValue.setCount(count - langCount);
+                langValue.setCount(langCount);
+//                langValue.setCount(count - langCount);
                 langFacetValues.add(langValue);
                 f.setValues(langFacetValues);
             }
