@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 import uk.ac.core.elasticsearch.entities.ElasticSearchRepo;
 
@@ -23,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- *
  * @author lucasanastasiou
  */
 @Service
@@ -31,7 +31,7 @@ public class COREtoOMTDMapper {
 
     @Autowired
     LanguageUtils languageUtils;
-    
+
     /**
      * Converts a CORE document to OMTD schema
      *
@@ -295,18 +295,29 @@ public class COREtoOMTDMapper {
         // -- keywords
         documentInfo.setKeywords(null);
         documentInfo.setPages(null);
-        try {
-            String datePublished = esam.getDatePublished();
-            Date dateOfPublish = null;
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-            dateOfPublish = df.parse(datePublished);
-            eu.openminted.registry.domain.Date omtdDate = new eu.openminted.registry.domain.Date();
-            omtdDate.setDay(dateOfPublish.getDay());
-            omtdDate.setMonth(dateOfPublish.getMonth());
-            omtdDate.setYear(dateOfPublish.getYear());
-            documentInfo.setPublicationDate(omtdDate);
-        } catch (ParseException ex) {
-            Logger.getLogger(COREtoOMTDMapper.class.getName()).log(Level.SEVERE, null, ex);
+        Date dateOfPublish = null;
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        String datePublished = esam.getDatePublished();
+        if (datePublished != null) {
+            try {
+                dateOfPublish = df.parse(datePublished);
+            } catch (ParseException ex) {
+                df = new SimpleDateFormat("yyyy");
+                try {
+                    dateOfPublish = df.parse(datePublished);
+                } catch (ParseException e) {
+                    Logger.getLogger(COREtoOMTDMapper.class.getName()).log(Level.SEVERE, null, ex);
+                    dateOfPublish = null;
+                }
+            }
+
+            if (dateOfPublish != null) {
+                eu.openminted.registry.domain.Date omtdDate = new eu.openminted.registry.domain.Date();
+                omtdDate.setDay(dateOfPublish.getDay());
+                omtdDate.setMonth(dateOfPublish.getMonth());
+                omtdDate.setYear(dateOfPublish.getYear());
+                documentInfo.setPublicationDate(omtdDate);
+            }
         }
 
         // CORE has no explicit info about type of publication
@@ -364,14 +375,16 @@ public class COREtoOMTDMapper {
 
         return documentMetadataRecord;
     }
-    private static String getOMTDLanguageCode(String langCode){
-       
-        if (langCode.equalsIgnoreCase("zh-cn") || langCode.equalsIgnoreCase("zh-tw")){
+
+    private static String getOMTDLanguageCode(String langCode) {
+
+        if (langCode.equalsIgnoreCase("zh-cn") || langCode.equalsIgnoreCase("zh-tw")) {
             return "zh";
         }
         return langCode;
     }
-    private String getOMTDLanguageTag(String langCode){
+
+    private String getOMTDLanguageTag(String langCode) {
         return languageUtils.getLangCodeToName().get(langCode);
     }
 }
