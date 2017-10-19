@@ -18,7 +18,6 @@ import io.searchbox.core.SearchResult.Hit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -110,7 +109,7 @@ public class ElasticsearchConverter {
                     for (String value : params.get(key)) {
 
                         // convert language values to lowercase
-                        if (key == OMTDFacetEnum.DOCUMENT_LANG.value()) {
+                        if (key.equalsIgnoreCase(OMTDFacetEnum.DOCUMENT_LANG.value())) {
 
                             if (languageUtils.getLangNameToCode().containsKey(value))
                                 value = languageUtils.getLangNameToCode().get(value);
@@ -234,7 +233,7 @@ public class ElasticsearchConverter {
             OMTDFacetLabels omtdFacetInitializer = new OMTDFacetLabels();
 
             documentTypeFacet.setField(OMTDFacetEnum.DOCUMENT_TYPE.value());
-            documentTypeFacet.setLabel(omtdFacetInitializer.getOmtdFacetLabels().get(OMTDFacetEnum.DOCUMENT_TYPE));
+            documentTypeFacet.setLabel(omtdFacetInitializer.getFacetLabelsFromEnum(OMTDFacetEnum.DOCUMENT_TYPE));
 
             String term = "Fulltext";
             int count = searchResult.getTotal();

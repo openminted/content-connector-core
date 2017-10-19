@@ -5,7 +5,10 @@ import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.SearchResult;
 import eu.openminted.content.connector.core.mappings.COREtoOMTDMapper;
 import eu.openminted.content.connector.core.util.ElasticsearchConverter;
+import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
+import eu.openminted.content.connector.utils.faceting.OMTDFacetLabels;
 import eu.openminted.registry.domain.DocumentMetadataRecord;
+import eu.openminted.registry.domain.DocumentTypeEnum;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestResult;
 import io.searchbox.core.Search;
@@ -42,13 +45,18 @@ public class CORESearchService {
 
     @Autowired
     private COREtoOMTDMapper cOREtoOMTDMapper;
-    
+
     @Autowired
     private COREConnectorConfiguration cOREConnectorConfiguration;
     private Integer contentLimit;
 
     @Autowired
     private ElasticsearchConverter elasticsearchConverter;
+
+    @Autowired
+    private OMTDFacetLabels omtdFacetLabels;
+
+
     @PostConstruct
     private void init() {
         this.contentLimit = cOREConnectorConfiguration.CONTENT_LIMIT;
@@ -68,15 +76,24 @@ public class CORESearchService {
 
         io.searchbox.core.SearchResult searchResult = null;
         try {
-            searchResult = jestClient.execute(search);
-
             omtdSearchResult.setFrom(query.getFrom());
             omtdSearchResult.setTo(query.getTo());
 
+            if (query.getParams().containsKey(OMTDFacetEnum.DOCUMENT_TYPE.value())
+                    && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).size() == 1
+                    && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).get(0)
+                    .equalsIgnoreCase(omtdFacetLabels.
+                            getDocumentTypeLabelFromEnum(DocumentTypeEnum.WITH_ABSTRACT_ONLY))) {
+                omtdSearchResult.setTotalHits(0);
+                return omtdSearchResult;
+            }
+
+            searchResult = jestClient.execute(search);
             omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
             omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
 
             omtdSearchResult.setTotalHits(searchResult.getTotal());
+
         } catch (IOException ex) {
             System.out.println("ex = " + ex);
             ex.printStackTrace();
