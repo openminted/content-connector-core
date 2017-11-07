@@ -220,7 +220,7 @@ public class CORESearchService {
                 jaxbMarshaller.marshal(omtdRecord, sw);
                 String xmlString = sw.toString();
 
-                System.out.println("XML STRING DOCUMENTMETADATARECORD\n\n" + xmlString);
+//                System.out.println("XML STRING DOCUMENTMETADATARECORD\n\n" + xmlString);
                 baos.write(xmlString.getBytes());
             }
             baos.write("</OMTDPublications>".getBytes());
