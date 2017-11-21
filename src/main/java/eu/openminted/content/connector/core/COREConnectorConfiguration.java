@@ -10,11 +10,11 @@ import org.springframework.context.annotation.PropertySource;
  * @author lucasanastasiou
  */
 @Configuration
-@ComponentScan(basePackages = {"eu.openminted.content.connector.core"})
-@PropertySource(value = {"classpath:application.properties"})
+@ComponentScan("eu.openminted.content")
+//@PropertySource(value = {"classpath:application.properties"})
 public class COREConnectorConfiguration {
 
-    @Value("${content.limit:250}")
+    @Value("${content.limit:500}")
     public Integer CONTENT_LIMIT;
     
 }

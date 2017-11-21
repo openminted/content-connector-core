@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
 /**
+ *
  * @author lucasanastasiou
  */
 @Service
@@ -213,17 +214,15 @@ public class CORESearchService {
             JAXBContext jaxbContext = JAXBContext.newInstance(DocumentMetadataRecord.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
             jaxbMarshaller.setProperty(Marshaller.JAXB_FRAGMENT, Boolean.TRUE);
-            baos.write("<OMTDPublications>".getBytes());
+            baos.write("<documentMetadataRecords>".getBytes());
             for (DocumentMetadataRecord omtdRecord : list) {
                 // convert to XML string and write it to the stream
                 StringWriter sw = new StringWriter();
                 jaxbMarshaller.marshal(omtdRecord, sw);
                 String xmlString = sw.toString();
-
-//                System.out.println("XML STRING DOCUMENTMETADATARECORD\n\n" + xmlString);
                 baos.write(xmlString.getBytes());
             }
-            baos.write("</OMTDPublications>".getBytes());
+            baos.write("</documentMetadataRecords>".getBytes());
 
             byte[] bytes = baos.toByteArray();
 

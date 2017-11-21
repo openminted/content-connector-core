@@ -1,33 +1,23 @@
 package eu.openminted.content.connector.core.util;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
-import eu.openminted.content.connector.utils.faceting.OMTDFacetLabels;
 import eu.openminted.content.connector.utils.language.LanguageUtils;
 import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
+import java.util.*;
+
 /**
+ * Class responsible for querying CORE's elasticsearch and get results
  * @author lucasanastasiou
  */
 @Service
@@ -54,6 +44,11 @@ public class ElasticsearchConverter {
         return keyword;
     }
 
+    /**
+     * Constructs a query for elastic search
+     * @param query the openminted query
+     * @return String with the query for elastic search
+     */
     public String constructElasticsearchQueryFromOmtdQuery(Query query) {
         int from = query.getFrom();
         int to = query.getTo();
@@ -158,7 +153,6 @@ public class ElasticsearchConverter {
 
         if (facets
                 == null || facets.isEmpty()) {
-//            query.setFacets(DEFAULT_FACETS);
         }
 
         String facetString = "";
@@ -196,6 +190,12 @@ public class ElasticsearchConverter {
         return esQuery;
     }
 
+    /**
+     * Retrieves facets from elastic search's SearchResult as a list
+     * @param searchResult the result from the elastic search
+     * @param queryFacets the list of facets that are declared in the query
+     * @return a list with Facets matching those of the query
+     */
     public static List<Facet> getOmtdFacetsFromSearchResult(SearchResult searchResult, List<String> queryFacets) {
         List<Facet> omtdFacets = new ArrayList<>();
 
@@ -227,23 +227,9 @@ public class ElasticsearchConverter {
                 omtdFacets.add(omtdFacet);
             }
 
-            // manually setting all documents as fulltext
-            Facet documentTypeFacet = new Facet();
-            List<Value> omtdFacetValues = new ArrayList<>();
-            OMTDFacetLabels omtdFacetInitializer = new OMTDFacetLabels();
-
-            documentTypeFacet.setField(OMTDFacetEnum.DOCUMENT_TYPE.value());
-            documentTypeFacet.setLabel(omtdFacetInitializer.getFacetLabelsFromEnum(OMTDFacetEnum.DOCUMENT_TYPE));
-
-            String term = "Fulltext";
             int count = searchResult.getTotal();
-            Value omtdValue = new Value();
-            omtdValue.setValue(term);
-            omtdValue.setLabel(term);
-            omtdValue.setCount(count);
-            omtdFacetValues.add(omtdValue);
-            documentTypeFacet.setValues(omtdFacetValues);
-            omtdFacets.add(documentTypeFacet);
+
+            setDocumentTypeFacetValue(omtdFacets, count);
 
             setRightsFacetValue(omtdFacets, count);
 
@@ -257,10 +243,37 @@ public class ElasticsearchConverter {
         return omtdFacets;
     }
 
+    /**
+     * Assisting method for setting documentType facet's value
+     * @param omtdFacets list of facets
+     * @param count number of values found
+     */
+    private static void setDocumentTypeFacetValue(List<Facet> omtdFacets, int count) {
+        // manually setting all document types as fulltext
+        String term = "Fulltext";
+        for (Facet f : omtdFacets) {
+            if (f.getField().equalsIgnoreCase("documenttype")) {
+                List<Value> documentTypeFacetValues = new ArrayList<>();
+                Value rightsValue = new Value();
+                rightsValue.setValue(term);
+                rightsValue.setLabel(term);
+                rightsValue.setCount(count);
+                documentTypeFacetValues.add(rightsValue);
+                f.setValues(documentTypeFacetValues);
+            }
+        }
+    }
+
+
+    /**
+     * Assisting method for setting rightsstmtname facet's value
+     * @param omtdFacets list of facets
+     * @param count number of values found
+     */
     private static void setRightsFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting all documents rights as open access
         for (Facet f : omtdFacets) {
-            if (f.getField().equalsIgnoreCase("RIGHTS")) {
+            if (f.getField().equalsIgnoreCase("rightsstmtname")) {
                 List<Value> rightsFacetValues = new ArrayList<>();
                 Value rightsValue = new Value();
                 rightsValue.setValue("Open Access");
@@ -273,6 +286,11 @@ public class ElasticsearchConverter {
         }
     }
 
+    /**
+     * Assisting method for getting publications as string from search results
+     * @param searchResult the search result from the elastic search
+     * @return a list with publications as string
+     */
     public static List<String> getPublicationsFromSearchResultAsString(SearchResult searchResult) {
         List<String> publications = new ArrayList<>();
 
@@ -292,6 +310,11 @@ public class ElasticsearchConverter {
         return publications;
     }
 
+    /**
+     * Method to get publications from search result as a list of ElasticSearchArticleMetadata
+     * @param searchResult the search result from the elastic search
+     * @return a list of publications as ElasticSearchArticleMetadata
+     */
     public static List<ElasticSearchArticleMetadata> getPublicationsFromSearchResult(SearchResult searchResult) {
         List<ElasticSearchArticleMetadata> publications = new ArrayList<>();
 
@@ -307,6 +330,11 @@ public class ElasticsearchConverter {
         return publications;
     }
 
+    /**
+     * Method to get publications from result json array as a list of ElasticSearchArticleMetadata
+     * @param hits the JsonArray with publications
+     * @return a list of publications as ElasticSearchArticleMetadata
+     */
     public static List<ElasticSearchArticleMetadata> getPublicationsFromResultJsonArray(JsonArray hits) {
         java.util.Random random = new Random();
         List<ElasticSearchArticleMetadata> results = new ArrayList<>();
@@ -329,6 +357,11 @@ public class ElasticsearchConverter {
         return results;
     }
 
+    /**
+     * Method that constructs a fetch request for elastic search that fetches documents by their identifier
+     * @param identifier the document's identifier
+     * @return a request to be used in elastic search
+     */
     public static String constructFetchByIdentifierElasticsearchQuery(String identifier) {
         //check if identifier is a number
         Integer id = null;
@@ -365,6 +398,10 @@ public class ElasticsearchConverter {
         return esQuery;
     }
 
+    /**
+     * Assisting method that sets document type facet
+     * @param omtdFacets a list of facets
+     */
     private static void setDocumentFacetValue(List<Facet> omtdFacets) {
         // manually mapping CORE document types to OMTD document types        
         for (Facet f : omtdFacets) {
@@ -414,6 +451,11 @@ public class ElasticsearchConverter {
 
     }
 
+    /**
+     * Assisting method that sets document language facet
+     * @param omtdFacets a list of facets
+     * @param count the number of values found
+     */
     private static void setLanguageFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting undetermined language as :
         // undetermined = total - sum(known_languages)
@@ -424,18 +466,16 @@ public class ElasticsearchConverter {
 
                 int langCount = 0;
                 for (Value langValue : langFacetValues) {
-
-                    if (languageUtils.getLangCodeToName().containsKey(langValue.getValue()))
+                    if (languageUtils.getLangCodeToName().containsKey(langValue.getValue())) {
                         langValue.setLabel(languageUtils.getLangCodeToName().get(langValue.getValue()));
-                    else
                         langCount += langValue.getCount();
+                    }
                 }
 
                 Value langValue = new Value();
                 langValue.setLabel("Undetermined");
                 langValue.setValue("und");
-                langValue.setCount(langCount);
-//                langValue.setCount(count - langCount);
+                langValue.setCount(count - langCount);
                 langFacetValues.add(langValue);
                 f.setValues(langFacetValues);
             }

@@ -13,11 +13,11 @@ import org.springframework.context.annotation.Configuration;
  * @author lucasanastasiou
  */
 @Configuration
-@ComponentScan(basePackages = {"eu.openminted.content.connector.core"})
+@ComponentScan("eu.openminted.content")
 public class COREElasticSearchConfiguration {
 
     @Value("${es.rest.endpoint:'localhost:9200'}")
-    private String endpoint;
+    String endpoint;
 
     @Bean
     JestClient client() {
