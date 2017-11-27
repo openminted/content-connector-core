@@ -35,8 +35,8 @@ public class COREtoOMTDMapper {
     /**
      * Converts a CORE document to OMTD schema
      *
-     * @param esam
-     * @return
+     * @param esam the elasticsearch article metadata parameter
+     * @return DocumentMetadataRecord
      */
     public DocumentMetadataRecord convertCOREtoOMTD(ElasticSearchArticleMetadata esam) {
         DocumentMetadataRecord documentMetadataRecord = new DocumentMetadataRecord();
@@ -45,7 +45,7 @@ public class COREtoOMTDMapper {
         MetadataHeaderInfo metadataHeaderInfo = new MetadataHeaderInfo();
         // -- -- metadata creation date <-- repository document metadata updated
         Long time = esam.getRepositoryDocument().getMetadataUpdated();
-        Date date = new Date((long) time * 1000);
+        Date date = new Date(time * 1000);
         GregorianCalendar c = new GregorianCalendar();
         c.setTime(date);
         XMLGregorianCalendar xMLGregorianCalendar = null;
@@ -60,9 +60,13 @@ public class COREtoOMTDMapper {
         List<PersonInfo> relatedPersons = new ArrayList<>();
         for (String contributor : esam.getContributors()) {
             PersonInfo relatedPerson = new PersonInfo();
-            Name personName = new Name();
-            personName.setValue(contributor);
-            relatedPerson.getNames().add(personName);
+            String[] personName = contributor.split(",");
+            if (personName.length == 2) {
+                relatedPerson.setGivenName(personName[0].trim());
+                relatedPerson.setSurname(personName[1].trim());
+            } else {
+                relatedPerson.setSurname(contributor);
+            }
             relatedPerson.setPersonIdentifiers(null);
             relatedPersons.add(relatedPerson);
         }
@@ -131,10 +135,16 @@ public class COREtoOMTDMapper {
         // -- -- authors
         List<PersonInfo> authors = new ArrayList<>();
         for (String cAuthor : esam.getAuthors()) {
+
             PersonInfo relatedPerson = new PersonInfo();
-            Name personName = new Name();
-            personName.setValue(cAuthor);
-            relatedPerson.getNames().add(personName);
+            String[] personName = cAuthor.split(",");
+            if (personName.length == 2) {
+                relatedPerson.setGivenName(personName[0].trim());
+                relatedPerson.setSurname(personName[1].trim());
+            } else {
+                relatedPerson.setSurname(cAuthor);
+            }
+            relatedPerson.setPersonIdentifiers(null);
             authors.add(relatedPerson);
         }
         documentInfo.setAuthors(relatedPersons);
@@ -147,9 +157,14 @@ public class COREtoOMTDMapper {
         for (String cContributor : esam.getContributors()) {
             ActorInfo contributor = new ActorInfo();
             PersonInfo relatedPerson = new PersonInfo();
-            Name personName = new Name();
-            personName.setValue(cContributor);
-            relatedPerson.getNames().add(personName);
+            String[] personName = cContributor.split(",");
+            if (personName.length == 2) {
+                relatedPerson.setGivenName(personName[0].trim());
+                relatedPerson.setSurname(personName[1].trim());
+            } else {
+                relatedPerson.setSurname(cContributor);
+            }
+            relatedPerson.setPersonIdentifiers(null);
             contributor.setRelatedPerson(relatedPerson);
             contributor.setRelatedOrganization(null);
         }
@@ -157,44 +172,38 @@ public class COREtoOMTDMapper {
 
         // -- -- distribution info
         DocumentDistributionInfo documentDistributionInfo = new DocumentDistributionInfo();
+        // -- -- data format info
+        DataFormatInfo dataFormatInfo = new DataFormatInfo();
+        // -- -- rights info
+        RightsInfo rightsInfo = new RightsInfo();
         // -- -- -- access url
         String accessUrl = "https://core.ac.uk/display/" + esam.getId();
-        List<String> accessURLs = new ArrayList<>();
-        accessURLs.add(accessUrl);
-        DistributionLoc distributionLoc = new DistributionLoc();
-        distributionLoc.setDistributionLocation(accessUrl);
-//        documentDistributionInfo.setAccessURLs(accessURLs);
+        documentDistributionInfo.setDistributionLocation(accessUrl);
         // -- -- -- attribution text
-        List<AttributionText> attributionTexts = new ArrayList<>();
-        AttributionText attributionText = new AttributionText();
-        attributionText.setLang(null);
-        attributionText.setValue(null);
-        attributionTexts.add(attributionText);
-        documentDistributionInfo.setAttributionTexts(attributionTexts);
+        // CORE publications contain no attribution text
+
         // -- -- -- availability end date
-        documentDistributionInfo.setAvailabilityEndDate(null);
+//        documentDistributionInfo.setAvailabilityEndDate(null);
         // -- -- -- availability start date
-        documentDistributionInfo.setAvailabilityStartDate(null);
+//        documentDistributionInfo.setAvailabilityStartDate(null);
 
         // -- -- -- encodings
 //        List<CharacterEncodingEnum> encodings = new ArrayList<>();
 //        encodings.add(CharacterEncodingEnum.UTF_8);
         documentDistributionInfo.setCharacterEncoding(CharacterEncodingEnum.UTF_8);
         // -- -- -- copyrights
-        documentDistributionInfo.setCopyrightStatements(null);
+//        documentDistributionInfo.setCopyrightStatements(null);
         // -- -- -- distributions
 //        List<DistributionMediumEnum> distributions = new ArrayList<>();
 //        distributions.add(DistributionMediumEnum.DOWNLOADABLE);
 //        distributions.add(DistributionMediumEnum.ACCESSIBLE_THROUGH_INTERFACE);
-        distributionLoc.setDistributionMedium(DistributionMediumEnum.DOWNLOADABLE);
+//        distributionLoc.setDistributionMedium(DistributionMediumEnum.DOWNLOADABLE);
         // -- -- -- download urls
         List<String> dlUrls = new ArrayList<>();
         if (esam.getFullText() != null) {
             dlUrls.add("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
             dlUrls.add(esam.getFullTextIdentifier());
-            distributionLoc.setDistributionLocation("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
-            documentDistributionInfo.setDistributionLoc(distributionLoc);
-//            documentDistributionInfo.setDownloadURLs(dlUrls);
+            documentDistributionInfo.setDistributionLocation("https://core.ac.uk/download/pdf/" + esam.getId() + ".pdf");
         }
 
         if (esam.getPdfHashValue() != null && !esam.getPdfHashValue().isEmpty()) {
@@ -202,25 +211,25 @@ public class COREtoOMTDMapper {
             documentDistributionInfo.setHashkey(pdfHashKey);
         }
 
-        // -- -- -- fee
-        documentDistributionInfo.setFee(null);
         // -- -- -- fullText
-        FullText2 fullText = new FullText2();
+        List<FullText> fullTexts = new ArrayList<>();
+        FullText fullText = new FullText();
         fullText.setLang(null);
         String fullTextString = esam.getFullText();
         String fullTextStringEscaped = StringEscapeUtils.escapeXml(fullTextString);
         fullText.setValue(fullTextStringEscaped);
-        documentDistributionInfo.setFullText(fullText);
+        fullTexts.add(fullText);
+        documentInfo.setFullTexts(fullTexts);
+
         // -- -- -- mime types
-//        List<DataFormatInfo> dataFormatInfos = new ArrayList<>();
-        DataFormatInfo dataFormatInfo = new DataFormatInfo();
-        dataFormatInfo.setMimeType(MimeTypeEnum.APPLICATION_PDF);
-//        dataFormatInfos.add(dataFormatInfo);
+        dataFormatInfo.setDataFormat(DataFormatType.APPLICATION_PDF);
         documentDistributionInfo.setDataFormatInfo(dataFormatInfo);
         // -- -- -- rights holders
-        documentDistributionInfo.setRightsHolders(null);
+        // CORE publications contains no rights holders
+
         // -- -- -- rights info
-        documentDistributionInfo.setRightsInfo(null);
+        rightsInfo.setRightsStatement(RightsStatementEnum.OPEN_ACCESS);
+        documentInfo.setRightsInfo(rightsInfo);
         // -- -- -- sizes
         SizeInfo sizeInfo = new SizeInfo();
         sizeInfo.setSize("" + esam.getRepositoryDocument().getPdfSize());
@@ -229,9 +238,9 @@ public class COREtoOMTDMapper {
         sizeInfos.add(sizeInfo);
         documentDistributionInfo.setSizes(sizeInfos);
         // -- -- -- user types
-        List<UserTypeEnum> userTypes = new ArrayList<>();
-        userTypes.add(UserTypeEnum.ACADEMIC);
-        documentDistributionInfo.setUserTypes(userTypes);
+//        List<UserTypeEnum> userTypes = new ArrayList<>();
+//        userTypes.add(UserTypeEnum.ACADEMIC);
+//        documentDistributionInfo.setUserTypes(userTypes);
 
         // -- -- SET document distribution info
         List<DocumentDistributionInfo> documentDistributionInfos = new ArrayList<>();
@@ -240,18 +249,18 @@ public class COREtoOMTDMapper {
         documentInfo.setDistributions(documentDistributionInfos);
 
         // -- languages
-        List<Language> languages2 = new ArrayList<>();
+        List<String> languages2 = new ArrayList<>();
         if (esam.getLanguage() != null) {
-            Language language = new Language();
-            language.setLanguageId(getOMTDLanguageCode(esam.getLanguage().getCode()));
-            language.setLanguageTag(getOMTDLanguageTag(getOMTDLanguageCode(esam.getLanguage().getCode())));
+            String language = getOMTDLanguageCode(esam.getLanguage().getCode());
+//            language.setLanguageId(getOMTDLanguageCode(esam.getLanguage().getCode()));
+//            language.setLanguageTag(getOMTDLanguageTag(getOMTDLanguageCode(esam.getLanguage().getCode())));
             languages2.add(language);
             documentInfo.setDocumentLanguages(languages2);
         } else {
 
-            Language language = new Language();
-            language.setLanguageId("und");
-            language.setLanguageTag("Undetermined");
+            String language = "und";
+//            language.setLanguageId("und");
+//            language.setLanguageTag("Undetermined");
             languages2.add(language);
             documentInfo.setDocumentLanguages(languages2);
         }
@@ -365,8 +374,6 @@ public class COREtoOMTDMapper {
         document.setPublication(documentInfo);
 
         AnnotatedDocumentInfo annotatedDocumentInfo = new AnnotatedDocumentInfo();
-        AnnotationInfo annotationInfo = new AnnotationInfo();
-        annotatedDocumentInfo.setAnnotationInfo(null);
         annotatedDocumentInfo.setRawPublication(null);
         // set annotation - is empty atm
         document.setAnnotatedPublication(annotatedDocumentInfo);
