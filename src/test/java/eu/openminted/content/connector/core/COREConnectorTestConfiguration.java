@@ -10,10 +10,15 @@ import java.io.IOException;
 @Configuration
 public class COREConnectorTestConfiguration {
     @Bean
-    public PropertyPlaceholderConfigurer propertyPlaceholderConfigurer() throws IOException {
+    public PropertyPlaceholderConfigurer propertyPlaceholderConfigurer() {
         final PropertyPlaceholderConfigurer ppc = new PropertyPlaceholderConfigurer();
         ppc.setLocation(new ClassPathResource("application.properties"));
         return ppc;
+    }
+
+    @Bean
+    public CORESearchService cORESearchService() {
+        return new CORESearchService();
     }
 
 }

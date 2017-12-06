@@ -14,25 +14,20 @@ import io.searchbox.client.JestResult;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchScroll;
 import io.searchbox.params.Parameters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
+import javax.annotation.PostConstruct;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.PostConstruct;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
 
 /**
  *
@@ -63,7 +58,7 @@ public class CORESearchService {
         this.contentLimit = cOREConnectorConfiguration.CONTENT_LIMIT;
     }
 
-    Logger logger = Logger.getLogger(CORESearchService.class.getName());
+    private Logger logger = Logger.getLogger(CORESearchService.class.getName());
 
     public SearchResult query(Query query) {
         SearchResult omtdSearchResult = new SearchResult();
@@ -95,9 +90,6 @@ public class CORESearchService {
 
             omtdSearchResult.setTotalHits(searchResult.getTotal());
 
-        } catch (IOException ex) {
-            System.out.println("ex = " + ex);
-            ex.printStackTrace();
         } catch (Exception ex) {
             System.out.println("ex = " + ex);
             ex.printStackTrace();
