@@ -86,7 +86,7 @@ public class ElasticsearchConverter {
         Map<String, List<String>> params = query.getParams();
 
         // parameters in ES query are part of a boolean filter in a filtered query
-        String paramsString = "";
+        StringBuilder paramsString = new StringBuilder();
         if (params != null && params.size() > 0) {
             for (String key : params.keySet()) {
                 String esParameterName = OMTDtoESMapper.OMTD_TO_ES_PARAMETER_NAMES.get(key);
@@ -98,9 +98,7 @@ public class ElasticsearchConverter {
 
                 // each of the values of this parameter becomes a should clause (equivalent of OR in ES lingo)
                 if (params.get(key).size() > 0) {
-                    paramsString += "{\n"
-                            + "\"bool\": {\n"
-                            + "     \"should\": [\n";
+                    paramsString.append("{\n" + "\"bool\": {\n" + "     \"should\": [\n");
                     for (String value : params.get(key)) {
 
                         // convert language values to lowercase
@@ -112,18 +110,16 @@ public class ElasticsearchConverter {
                                 value = value.toLowerCase();
                         }
 
-                        paramsString += "{\"term\": { \"" + esParameterName + "\": \"" + value + "\" }},\n";
+                        paramsString.append("{\"term\": { \"").append(esParameterName).append("\": \"").append(value).append("\" }},\n");
                     }
                     //remove trailing comma
-                    paramsString = paramsString.replaceAll(",\n$", "");
-                    paramsString += "]\n"
-                            + "}\n"
-                            + "},\n";
+                    paramsString = new StringBuilder(paramsString.toString().replaceAll(",\n$", ""));
+                    paramsString.append("]\n" + "}\n" + "},\n");
                 }
 
             }
             //remove trailing comma
-            paramsString = paramsString.replaceAll(",\n$", "");
+            paramsString = new StringBuilder(paramsString.toString().replaceAll(",\n$", ""));
 
         }
 
@@ -138,7 +134,7 @@ public class ElasticsearchConverter {
                 + "                \"must\":[\n"
                 + "                    { \"exists\" : { \"field\" : \"fullText\" } },\n"
                 + "                    { \"term\": { \"deleted\":\"ALLOWED\" } }\n";
-        if (!paramsString.isEmpty()) {
+        if (paramsString.length() > 0) {
             filterQueryComponent += "," + paramsString;
         }
         filterQueryComponent += "]}";
@@ -150,34 +146,33 @@ public class ElasticsearchConverter {
         // Facets
         //
         List<String> facets = query.getFacets();
+        StringBuilder facetString = new StringBuilder();
 
-        if (facets
-                == null || facets.isEmpty()) {
-        }
-
-        String facetString = "";
-        facetString += " \"facets\" : {";
-        // for each facet creates a line like:
-        // \"yearFacet\" : { \"terms\" : {\"field\":\"year\"}}
-        for (String facet : facets) {
-            //special case for some fields (from the multi-field choose the non-analyzed version)
-            String facetField = facet;
-            String knownFacet = OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(facet);
-            if (knownFacet != null && !knownFacet.isEmpty()) {
-                facetField = knownFacet;
+        if (facets != null && !facets.isEmpty()) {
+            facetString.append(" \"facets\" : {");
+            // for each facet creates a line like:
+            // \"yearFacet\" : { \"terms\" : {\"field\":\"year\"}}
+            for (String facet : facets) {
+                //special case for some fields (from the multi-field choose the non-analyzed version)
+                String facetField = facet;
+                String knownFacet = OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(facet);
+                if (knownFacet != null && !knownFacet.isEmpty()) {
+                    facetField = knownFacet;
+                }
+                facetString.append("\"").append(facet).append("Facet\" : { \"terms\" : {\"field\" : \"").append(facetField).append("\"} },");
             }
-            facetString += "\"" + facet + "Facet\" : { \"terms\" : {\"field\" : \"" + facetField + "\"} },";
+            //remove trailing comma
+            facetString = new StringBuilder(facetString.toString().replaceAll(",$", ""));
+            facetString.append("},");
         }
-        //remove trailing comma
-        facetString = facetString.replaceAll(",$", "");
-        facetString += "},";
 
         //-------------------------------------------------------
         //
         // Combine everything into a filtered query with facets
         //
         //-------------------------------------------------------
-        String esQuery = queryComponent
+
+        return queryComponent
                 + filterQueryComponent
                 + facetString
                 + "    \"_source\": {\n"
@@ -186,8 +181,6 @@ public class ElasticsearchConverter {
                 + "    \"from\":" + from + ",\n"
                 + "    \"size\":" + (to - from) + "\n"
                 + "}";
-
-        return esQuery;
     }
 
     /**
@@ -273,7 +266,7 @@ public class ElasticsearchConverter {
     private static void setRightsFacetValue(List<Facet> omtdFacets, int count) {
         // manually setting all documents rights as open access
         for (Facet f : omtdFacets) {
-            if (f.getField().equalsIgnoreCase("rightsstmtname")) {
+            if (f.getField().equalsIgnoreCase("rights")) {
                 List<Value> rightsFacetValues = new ArrayList<>();
                 Value rightsValue = new Value();
                 rightsValue.setValue("Open Access");
@@ -370,7 +363,7 @@ public class ElasticsearchConverter {
         } catch (NumberFormatException nfe) {
             //not a number
         }
-        String esQuery = "";
+        String esQuery;
         if (id != null) {
 
             esQuery = "{\n"

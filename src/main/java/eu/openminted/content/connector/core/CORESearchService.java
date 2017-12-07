@@ -70,7 +70,7 @@ public class CORESearchService {
                 .addType("article")
                 .build();
 
-        io.searchbox.core.SearchResult searchResult = null;
+        io.searchbox.core.SearchResult searchResult;
         try {
             omtdSearchResult.setFrom(query.getFrom());
             omtdSearchResult.setTo(query.getTo());
@@ -114,12 +114,11 @@ public class CORESearchService {
 
             JestResult result = jestClient.execute(search);
 
-            String newScrollId = "";
+            String newScrollId;
             newScrollId = result.getJsonObject().get("_scroll_id").getAsString();
-            String scrollId = "";
-            JsonArray hits = null;
+            String scrollId;
+            JsonArray hits;
 
-            int publicationsResultSize = publicationResults.size();
             do {
                 scrollId = newScrollId;
                 SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m")
@@ -131,9 +130,8 @@ public class CORESearchService {
                 result = jestClient.execute(scroll);
 
                 newScrollId = result.getJsonObject().getAsJsonPrimitive("_scroll_id").getAsString();
-                publicationsResultSize = publicationResults.size();
 
-            } while (hits != null && hits.size() > 0 && publicationsResultSize < this.contentLimit);
+            } while (hits != null && hits.size() > 0 && publicationResults.size() < this.contentLimit);
         } catch (Exception ex) {
             logger.log(Level.ALL, "Exception while fetching big result set:" + ex.getMessage());
         }
@@ -142,7 +140,7 @@ public class CORESearchService {
 
     }
 
-    InputStream fetchByIdentifier(String identifier) throws IOException {
+    InputStream fetchByIdentifier(String identifier) {
 
         String elasticSearchQueryString = ElasticsearchConverter.constructFetchByIdentifierElasticsearchQuery(identifier);
 
@@ -169,21 +167,18 @@ public class CORESearchService {
 
             // find the first non-empty identifier
             if (coreID != null && !coreID.isEmpty()) {
-                String dlURL = "https://core.ac.uk/download/pdf/" + coreID + ".pdf";
-                articlePdfUrl = dlURL;
+                articlePdfUrl = "https://core.ac.uk/download/pdf/" + coreID + ".pdf";
                 break;
             }
         }
 
         if (!articlePdfUrl.isEmpty()) {
-            InputStream in = null;
+            InputStream in;
             try {
                 in = new URL(articlePdfUrl).openStream();
                 return in;
             } catch (IOException iOException) {
                 Logger.getLogger(CORESearchService.class.getName()).log(Level.SEVERE, null, iOException);
-            } finally {
-//                IOUtils.closeQuietly(in);
             }
         }
         // in case the block above failed to return the stream

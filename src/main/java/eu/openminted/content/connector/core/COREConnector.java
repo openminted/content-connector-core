@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class COREConnector implements ContentConnector {
 
     @Autowired
-    CORESearchService cORESearchService;
+    private CORESearchService cORESearchService;
 
     /**
      * Search method for browsing metadata
@@ -41,9 +41,9 @@ public class COREConnector implements ContentConnector {
      */
     @Override
     public InputStream downloadFullText(String string) {
-        try {        
+        try {
             return cORESearchService.fetchByIdentifier(string);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(COREConnector.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;

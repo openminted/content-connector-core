@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -121,10 +120,15 @@ public class COREConnectorTest {
 
 //      In order to download the pdf itself, uncomment the following lines
 
-//        FileOutputStream fileOutputStream = new FileOutputStream(new File("downloaded.pdf"));
-//        IOUtils.copy(result, fileOutputStream);
-//        fileOutputStream.close();
-//        result.close();
+//        FileOutputStream fileOutputStream = null;
+//        try {
+//            fileOutputStream = new FileOutputStream(new File("downloaded.pdf"));
+//            IOUtils.copy(result, fileOutputStream);
+//            fileOutputStream.close();
+//            result.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     /**
