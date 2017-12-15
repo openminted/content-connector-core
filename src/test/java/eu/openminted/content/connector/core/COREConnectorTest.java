@@ -64,7 +64,7 @@ public class COREConnectorTest {
     @Test
     @Ignore
     public void searchFacets() {
-        query.getFacets().add("rightsstmtname");
+        query.getFacets().add("rights");
         query.getFacets().add("documentlanguage");
         query.getFacets().add("documenttype");
         query.getFacets().add("publicationtype");
@@ -178,7 +178,7 @@ public class COREConnectorTest {
         query.getParams().get("documentlanguage").add("en");
         query.getParams().get("publicationtype").add("research");
 
-        query.getFacets().add("rightsstmtname");
+        query.getFacets().add("rights");
         query.getFacets().add("documentlanguage");
         query.getFacets().add("documenttype");
         query.getFacets().add("publicationtype");
