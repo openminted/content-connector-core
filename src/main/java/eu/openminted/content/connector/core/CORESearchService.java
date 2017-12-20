@@ -30,7 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author lucasanastasiou
  */
 @Service
@@ -60,7 +59,7 @@ public class CORESearchService {
 
     private Logger logger = Logger.getLogger(CORESearchService.class.getName());
 
-    public SearchResult query(Query query) {
+    public SearchResult query(Query query) throws IOException {
         SearchResult omtdSearchResult = new SearchResult();
 
         String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(query);
@@ -71,29 +70,25 @@ public class CORESearchService {
                 .build();
 
         io.searchbox.core.SearchResult searchResult;
-        try {
-            omtdSearchResult.setFrom(query.getFrom());
-            omtdSearchResult.setTo(query.getTo());
+        omtdSearchResult.setFrom(query.getFrom());
+        omtdSearchResult.setTo(query.getTo());
 
-            if (query.getParams().containsKey(OMTDFacetEnum.DOCUMENT_TYPE.value())
-                    && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).size() == 1
-                    && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).get(0)
-                    .equalsIgnoreCase(omtdFacetLabels.
-                            getDocumentTypeLabelFromEnum(DocumentTypeEnum.WITH_ABSTRACT_ONLY))) {
-                omtdSearchResult.setTotalHits(0);
-                return omtdSearchResult;
-            }
-
-            searchResult = jestClient.execute(search);
-            omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
-            omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
-
-            omtdSearchResult.setTotalHits(searchResult.getTotal());
-
-        } catch (Exception ex) {
-            System.out.println("ex = " + ex);
-            ex.printStackTrace();
+        if (query.getParams().containsKey(OMTDFacetEnum.DOCUMENT_TYPE.value())
+                && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).size() == 1
+                && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).get(0)
+                .equalsIgnoreCase(omtdFacetLabels.
+                        getDocumentTypeLabelFromEnum(DocumentTypeEnum.WITH_ABSTRACT_ONLY))) {
+            omtdSearchResult.setTotalHits(0);
+            return omtdSearchResult;
         }
+
+        searchResult = jestClient.execute(search);
+
+        omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
+        omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+
+        omtdSearchResult.setTotalHits(searchResult.getTotal());
+
         return omtdSearchResult;
     }
 

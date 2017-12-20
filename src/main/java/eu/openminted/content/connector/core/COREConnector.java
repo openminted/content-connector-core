@@ -29,7 +29,7 @@ public class COREConnector implements ContentConnector {
      * @return SearchResult with metadata and facets
      */
     @Override
-    public SearchResult search(Query query) {
+    public SearchResult search(Query query) throws IOException {
         return cORESearchService.query(query);
     }
 
