@@ -222,7 +222,7 @@ public class COREtoOMTDMapper {
         documentInfo.setFullTexts(fullTexts);
 
         // -- -- -- mime types
-        dataFormatInfo.setDataFormat(DataFormatType.APPLICATION_PDF);
+        dataFormatInfo.setDataFormat(DataFormatType.HTTP___W3ID_ORG_META_SHARE_OMTD_SHARE_PDF);
         documentDistributionInfo.setDataFormatInfo(dataFormatInfo);
         // -- -- -- rights holders
         // CORE publications contains no rights holders
