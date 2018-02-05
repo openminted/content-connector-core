@@ -1,6 +1,7 @@
 package eu.openminted.content.connector.core.util;
 
 import com.google.gson.*;
+import eu.openminted.content.connector.ContentConnector;
 import eu.openminted.content.connector.Query;
 import eu.openminted.content.connector.core.mappings.OMTDtoESMapper;
 import eu.openminted.content.connector.utils.faceting.OMTDFacetEnum;
@@ -9,6 +10,7 @@ import eu.openminted.registry.core.domain.Facet;
 import eu.openminted.registry.core.domain.Value;
 import io.searchbox.core.SearchResult;
 import io.searchbox.core.SearchResult.Hit;
+import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ import java.util.*;
  */
 @Service
 public class ElasticsearchConverter {
+
+    private static Logger log = Logger.getLogger(ElasticsearchConverter.class);
 
     @Autowired
     private LanguageUtils languageUtils;
@@ -231,7 +235,7 @@ public class ElasticsearchConverter {
             setLanguageFacetValue(omtdFacets, count);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error getting omtd facets ", e);
         }
         return omtdFacets;
     }

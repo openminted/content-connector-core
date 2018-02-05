@@ -82,12 +82,20 @@ public class CORESearchService {
             return omtdSearchResult;
         }
 
+
         searchResult = jestClient.execute(search);
 
-        omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
-        omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+        /* if connection exists */
+        if (searchResult != null) {
+            omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
+            omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+            omtdSearchResult.setTotalHits(searchResult.getTotal());
+        }else{
+            omtdSearchResult.setPublications(new ArrayList<>());
+            omtdSearchResult.setFacets(new ArrayList<>());
+            omtdSearchResult.setTotalHits(0);
+        }
 
-        omtdSearchResult.setTotalHits(searchResult.getTotal());
 
         return omtdSearchResult;
     }
