@@ -97,7 +97,8 @@ public class CORESearchService {
                 omtdSearchResult.setTotalHits(0);
             }
         }catch(Exception e){
-            logger.log(Level.WARNING, "Error querying CORE ", e);
+//            logger.log(Level.WARNING, "Error querying CORE ", e);
+            throw new IOException("Error querying CORE");
         }
 
 
