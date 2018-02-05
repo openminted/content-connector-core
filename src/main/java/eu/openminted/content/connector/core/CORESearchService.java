@@ -14,6 +14,7 @@ import io.searchbox.client.JestResult;
 import io.searchbox.core.Search;
 import io.searchbox.core.SearchScroll;
 import io.searchbox.params.Parameters;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.ac.core.elasticsearch.entities.ElasticSearchArticleMetadata;
@@ -82,19 +83,24 @@ public class CORESearchService {
             return omtdSearchResult;
         }
 
+        try {
+            searchResult = jestClient.execute(search);
 
-        searchResult = jestClient.execute(search);
-
-        /* if connection exists */
-        if (searchResult != null) {
-            omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
-            omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
-            omtdSearchResult.setTotalHits(searchResult.getTotal());
-        }else{
-            omtdSearchResult.setPublications(new ArrayList<>());
-            omtdSearchResult.setFacets(new ArrayList<>());
-            omtdSearchResult.setTotalHits(0);
+            /* if connection exists */
+            if (searchResult != null) {
+                omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
+                omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
+                omtdSearchResult.setTotalHits(searchResult.getTotal());
+            }else{
+                omtdSearchResult.setPublications(new ArrayList<>());
+                omtdSearchResult.setFacets(new ArrayList<>());
+                omtdSearchResult.setTotalHits(0);
+            }
+        }catch(Exception e){
+            logger.log(Level.WARNING, "Error querying CORE ", e);
         }
+
+
 
 
         return omtdSearchResult;
