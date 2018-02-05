@@ -65,7 +65,7 @@ public class CORESearchService {
         String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(query);
 
         Search search = new Search.Builder(elasticSearchQueryString)
-                .addIndex("articles_2017_08_03")
+                .addIndex("articles")
                 .addType("article")
                 .build();
 
@@ -109,7 +109,7 @@ public class CORESearchService {
             String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
 
             Search search = new Search.Builder(elasticSearchQueryString)
-                    .addIndex("articles_2017_08_03")
+                    .addIndex("articles")
                     .addType("article")
                     .setParameter(Parameters.SIZE, 25)//each scroll can fetch up to 15*25=375 results (15 the number of shards in core cluster)
                     .setParameter(Parameters.SCROLL, "5m") // 5 minutes should be enough to digest these
@@ -148,7 +148,7 @@ public class CORESearchService {
         String elasticSearchQueryString = ElasticsearchConverter.constructFetchByIdentifierElasticsearchQuery(identifier);
 
         Search search = new Search.Builder(elasticSearchQueryString)
-                .addIndex("articles_2017_08_03")
+                .addIndex("articles")
                 .addType("article")
                 .build();
 
