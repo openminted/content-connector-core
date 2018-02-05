@@ -73,6 +73,9 @@ public class CORESearchService {
         io.searchbox.core.SearchResult searchResult;
         omtdSearchResult.setFrom(query.getFrom());
         omtdSearchResult.setTo(query.getTo());
+        omtdSearchResult.setPublications(new ArrayList<>());
+        omtdSearchResult.setFacets(new ArrayList<>());
+        omtdSearchResult.setTotalHits(0);
 
         if (query.getParams().containsKey(OMTDFacetEnum.DOCUMENT_TYPE.value())
                 && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).size() == 1
@@ -91,18 +94,11 @@ public class CORESearchService {
                 omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
                 omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
                 omtdSearchResult.setTotalHits(searchResult.getTotal());
-            }else{
-                omtdSearchResult.setPublications(new ArrayList<>());
-                omtdSearchResult.setFacets(new ArrayList<>());
-                omtdSearchResult.setTotalHits(0);
             }
         }catch(Exception e){
-//            logger.log(Level.WARNING, "Error querying CORE ", e);
+            logger.log(Level.WARNING, "Error querying CORE ", e);
             throw new IOException("Error querying CORE");
         }
-
-
-
 
         return omtdSearchResult;
     }
