@@ -18,8 +18,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class COREConnector implements ContentConnector {
 
+    public COREConnector(CORESearchService cORESearchService) {
+        this.cORESearchService = cORESearchService;
+    }    
+    
     @Autowired
     private CORESearchService cORESearchService;
+
+    
 
     /**
      * Search method for browsing metadata

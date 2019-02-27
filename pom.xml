@@ -14,6 +14,13 @@
         <spring.version>4.3.5.RELEASE</spring.version>
     </properties>
 
+<!--    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>1.4.7.RELEASE</version>
+    </parent>
+-->
+
     <dependencies>
         <dependency>
             <groupId>eu.openminted</groupId>
@@ -41,7 +48,7 @@
         <dependency>
             <groupId>io.searchbox</groupId>
             <artifactId>jest</artifactId>
-            <version>1.0.3</version>
+            <version>6.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
@@ -80,6 +87,54 @@
             <version>1.9</version>
             <type>jar</type>
         </dependency>
+<!--        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+            <version>1.4.2.RELEASE</version>
+            <type>jar</type>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>1.4.2.RELEASE</version>
+            <type>jar</type>
+            <exclusions>
+                                <exclusion>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>jcl-over-slf4j</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>jul-to-slf4j</artifactId>
+                                </exclusion>
+                                
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+            
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <version>1.4.2.RELEASE</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>1.4.2.RELEASE</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <version>1.4.3.RELEASE</version>
+        </dependency>
+        -->
     </dependencies>
 
     <repositories>
@@ -107,6 +162,11 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
-        </plugins>
+<!--        
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>-->
+        </plugins>    
     </build>
 </project>

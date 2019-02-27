@@ -20,6 +20,7 @@ import java.util.*;
 
 /**
  * Class responsible for querying CORE's elasticsearch and get results
+ *
  * @author lucasanastasiou
  */
 @Service
@@ -29,8 +30,12 @@ public class ElasticsearchConverter {
 
     @Autowired
     private LanguageUtils languageUtils;
-    
-    public static List<String> DEFAULT_FACETS = Arrays.asList(new String[]{"authors", "journals", "licence", "publicationYear", "documentLanguage", "publicationType"});
+
+    public static List<String> DEFAULT_FACETS = Arrays.asList(
+            OMTDFacetEnum.DOCUMENT_LANG.value(),
+            OMTDFacetEnum.PUBLICATION_YEAR.value(),
+            OMTDFacetEnum.PUBLICATION_TYPE.value()
+    );
 
     public static String constructElasticsearchScanAndScrollQueryFromOmtdQuery(Query query) {
         String keyword = query.getKeyword();
@@ -50,10 +55,15 @@ public class ElasticsearchConverter {
 
     /**
      * Constructs a query for elastic search
+     *
      * @param query the openminted query
      * @return String with the query for elastic search
      */
     public String constructElasticsearchQueryFromOmtdQuery(Query query) {
+        return constructElasticsearchQueryFromOmtdQuery(query, true);
+    }
+
+    public String constructElasticsearchQueryFromOmtdQuery(Query query, boolean withFromParameter) {
         int from = query.getFrom();
         int to = query.getTo();
         String keyword = query.getKeyword();
@@ -63,26 +73,20 @@ public class ElasticsearchConverter {
         // Query - either a keyword query or match all
         //
         queryComponent += "{\n"
-                + "    \"query\":{\n"
-                + "        \"filtered\":{\n"
-                + "            \"query\": {\n";
+                + "         \"bool\":{\n"
+                + "            \"must\":[\n";
         if (keyword == null || keyword.isEmpty() || keyword.equals("*")) {
-            String matchAllQueryComponent = "\"match_all\": {}";
+            String matchAllQueryComponent = "{\"match_all\": {}}";
             queryComponent += matchAllQueryComponent;
         } else {
             String escapedKeyword = QueryParserUtil.escape(keyword);
-            String keywordQueryComponent = "\"bool\": {\n"
-                    + "                    \"must\": [\n"
-                    + "                        {\n"
+            String keywordQueryComponent = "{\n"
                     + "                       \"query_string\": {\n"
                     + "                             \"query\": \"" + escapedKeyword + "\"\n"
                     + "                         }\n"
-                    + "                    }\n"
-                    + "                    ]   \n"
-                    + "                }\n";
+                    + "                    }\n";
             queryComponent += keywordQueryComponent;
         }
-        queryComponent += "},";
 
         //
         // Parameters
@@ -108,13 +112,28 @@ public class ElasticsearchConverter {
                         // convert language values to lowercase
                         if (key.equalsIgnoreCase(OMTDFacetEnum.DOCUMENT_LANG.value())) {
 
-                            if (languageUtils.getLangNameToCode().containsKey(value))
+                            if (languageUtils.getLangNameToCode().containsKey(value)) {
                                 value = languageUtils.getLangNameToCode().get(value);
-                            else
+                            } else {
                                 value = value.toLowerCase();
-                        }
+                            }
 
-                        paramsString.append("{\"term\": { \"").append(esParameterName).append("\": \"").append(value).append("\" }},\n");
+                            paramsString.append("{\n"
+                                    + "                \"nested\": {\n"
+                                    + "                  \"path\": \"language\",\n"
+                                    + "                  \"query\": {\n"
+                                    + "                    \"term\": {\n"
+                                    + "                      \"language.code\": {\n"
+                                    + "                        \"value\": \"" + value + "\"\n"
+                                    + "                      }\n"
+                                    + "                    }\n"
+                                    + "                  }\n"
+                                    + "                }\n"
+                                    + "              }");
+                        } else {
+
+                            paramsString.append("{\"term\": { \"").append(esParameterName).append("\": \"").append(value).append("\" }},\n");
+                        }
                     }
                     //remove trailing comma
                     paramsString = new StringBuilder(paramsString.toString().replaceAll(",\n$", ""));
@@ -133,41 +152,66 @@ public class ElasticsearchConverter {
         // apart of default filters (only fulltext items and not deleted) add
         // the parameters as a filter
         //
-        String filterQueryComponent = "\"filter\":{\n"
-                + "            \"bool\":{\n"
-                + "                \"must\":[\n"
+        // Elasticsearch 6 has deprecated filtered queries, instead include filters
+        // in boolean queries
+        //
+        String filterQueryComponent = ","
                 + "                    { \"exists\" : { \"field\" : \"fullText\" } },\n"
                 + "                    { \"term\": { \"deleted\":\"ALLOWED\" } }\n";
         if (paramsString.length() > 0) {
             filterQueryComponent += "," + paramsString;
         }
-        filterQueryComponent += "]}";
-        filterQueryComponent += "                }\n"
-                + "            }\n"
-                + "     },";
+        queryComponent += filterQueryComponent;
+        queryComponent += "]";//end of must 
+        queryComponent += "}";//end of bool
+        queryComponent += "}";//end of query
 
         //        
-        // Facets
+        // Facets are deprecated in ES6- instead replaced with aggregations
         //
         List<String> facets = query.getFacets();
-        StringBuilder facetString = new StringBuilder();
+        StringBuilder aggsComponent = new StringBuilder();
 
         if (facets != null && !facets.isEmpty()) {
-            facetString.append(" \"facets\" : {");
-            // for each facet creates a line like:
-            // \"yearFacet\" : { \"terms\" : {\"field\":\"year\"}}
+            aggsComponent.append(" \"aggs\" : {");
+            // for each aggregation (facet) creates a line like:
+            //"document_type_aggs": {"terms": {"field": "documentType"}}
+            // BUT in the case of nested object use a nested aggregation
             for (String facet : facets) {
-                //special case for some fields (from the multi-field choose the non-analyzed version)
                 String facetField = facet;
                 String knownFacet = OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(facet);
                 if (knownFacet != null && !knownFacet.isEmpty()) {
                     facetField = knownFacet;
+                    if (facetField.contains(".")) {
+                        String[] splits = facetField.split("\\.");
+                        String facetPathPrefix = facetField.split("\\.")[0];
+                        String facetNestedObject = facetField.split("\\.")[1];
+                        aggsComponent.append("\"" + facetField + "_aggs\": {");
+                        aggsComponent.append("    \"nested\": {");
+                        aggsComponent.append("        \"path\": \"" + facetPathPrefix + "\"");
+                        aggsComponent.append("    },");
+                        aggsComponent.append("    \"aggs\": {");
+                        aggsComponent.append("        \"langs_aggs_inner\": {");
+                        aggsComponent.append("            \"terms\": {");
+                        aggsComponent.append("                \"field\": \"" + facetField + "\",");
+                        aggsComponent.append("                \"size\": 10");
+                        aggsComponent.append("            }");
+                        aggsComponent.append("        }");
+                        aggsComponent.append("    }");
+                        aggsComponent.append("},");
+                    } else {
+                        aggsComponent.append("\"" + facetField + "_aggs\": {");
+                        aggsComponent.append("    \"terms\": {");
+                        aggsComponent.append("        \"field\": \"" + facetField + "\"");
+                        aggsComponent.append("    }");
+                        aggsComponent.append("},");
+                    }
                 }
-                facetString.append("\"").append(facet).append("Facet\" : { \"terms\" : {\"field\" : \"").append(facetField).append("\"} },");
+
             }
             //remove trailing comma
-            facetString = new StringBuilder(facetString.toString().replaceAll(",$", ""));
-            facetString.append("},");
+            aggsComponent = new StringBuilder(aggsComponent.toString().replaceAll(",$", ""));
+            aggsComponent.append("},");
         }
 
         //-------------------------------------------------------
@@ -175,20 +219,23 @@ public class ElasticsearchConverter {
         // Combine everything into a filtered query with facets
         //
         //-------------------------------------------------------
-
-        return queryComponent
-                + filterQueryComponent
-                + facetString
+        String es_query = "{"
+                + "    \"query\":" + queryComponent + ","
+                + aggsComponent.toString()
                 + "    \"_source\": {\n"
-                + "        \"exclude\": [ \"fullText\" ]\n"
-                + "    },"
-                + "    \"from\":" + from + ",\n"
-                + "    \"size\":" + (to - from) + "\n"
+                + "        \"excludes\": [ \"fullText\" ]\n"
+                + "    },";
+        if (withFromParameter) {
+            es_query += "    \"from\":" + from + ",\n";
+        }
+        es_query += "    \"size\":" + (to - from) + "\n"
                 + "}";
+        return es_query;
     }
 
     /**
      * Retrieves facets from elastic search's SearchResult as a list
+     *
      * @param searchResult the result from the elastic search
      * @param queryFacets the list of facets that are declared in the query
      * @return a list with Facets matching those of the query
@@ -198,21 +245,26 @@ public class ElasticsearchConverter {
 
         try {
             JsonObject jsonObject = searchResult.getJsonObject();
-            JsonObject facetsJsonObject = jsonObject.getAsJsonObject("facets");
+            JsonObject facetsJsonObject = jsonObject.getAsJsonObject("aggregations");
 
             for (String f : queryFacets) {
                 Facet omtdFacet = new Facet();
                 omtdFacet.setLabel(f);
                 omtdFacet.setField(f);
 
-                JsonObject fJObj = facetsJsonObject.getAsJsonObject(f + "Facet");
-                JsonArray terms = fJObj.getAsJsonArray("terms");
+                JsonObject fJObj = facetsJsonObject.getAsJsonObject(OMTDtoESMapper.OMTD_TO_ES_FACETS_NAMES.get(f) + "_aggs");
+
+                if (f.equals("documentlanguage")) {
+                    fJObj = fJObj.getAsJsonObject("langs_aggs_inner");
+                }
+
+                JsonArray terms = fJObj.getAsJsonArray("buckets");
 
                 List<Value> omtdFacetValues = new ArrayList<>();
                 for (int i = 0; i < terms.size(); i++) {
                     JsonObject fTermElement = terms.get(i).getAsJsonObject();
-                    String term = fTermElement.get("term").getAsString();
-                    int count = fTermElement.get("count").getAsInt();
+                    String term = fTermElement.get("key").getAsString();
+                    int count = fTermElement.get("doc_count").getAsInt();
                     Value omtdValue = new Value();
                     omtdValue.setValue(term);
                     omtdValue.setLabel(term);
@@ -224,7 +276,7 @@ public class ElasticsearchConverter {
                 omtdFacets.add(omtdFacet);
             }
 
-            int count = searchResult.getTotal();
+            int count = searchResult.getTotal().intValue();
 
             setDocumentTypeFacetValue(omtdFacets, count);
 
@@ -242,6 +294,7 @@ public class ElasticsearchConverter {
 
     /**
      * Assisting method for setting documentType facet's value
+     *
      * @param omtdFacets list of facets
      * @param count number of values found
      */
@@ -261,9 +314,9 @@ public class ElasticsearchConverter {
         }
     }
 
-
     /**
      * Assisting method for setting rightsstmtname facet's value
+     *
      * @param omtdFacets list of facets
      * @param count number of values found
      */
@@ -285,6 +338,7 @@ public class ElasticsearchConverter {
 
     /**
      * Assisting method for getting publications as string from search results
+     *
      * @param searchResult the search result from the elastic search
      * @return a list with publications as string
      */
@@ -308,7 +362,9 @@ public class ElasticsearchConverter {
     }
 
     /**
-     * Method to get publications from search result as a list of ElasticSearchArticleMetadata
+     * Method to get publications from search result as a list of
+     * ElasticSearchArticleMetadata
+     *
      * @param searchResult the search result from the elastic search
      * @return a list of publications as ElasticSearchArticleMetadata
      */
@@ -328,7 +384,9 @@ public class ElasticsearchConverter {
     }
 
     /**
-     * Method to get publications from result json array as a list of ElasticSearchArticleMetadata
+     * Method to get publications from result json array as a list of
+     * ElasticSearchArticleMetadata
+     *
      * @param hits the JsonArray with publications
      * @return a list of publications as ElasticSearchArticleMetadata
      */
@@ -355,7 +413,9 @@ public class ElasticsearchConverter {
     }
 
     /**
-     * Method that constructs a fetch request for elastic search that fetches documents by their identifier
+     * Method that constructs a fetch request for elastic search that fetches
+     * documents by their identifier
+     *
      * @param identifier the document's identifier
      * @return a request to be used in elastic search
      */
@@ -376,7 +436,19 @@ public class ElasticsearchConverter {
                     + "            \"should\": [\n"
                     + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}},\n"
                     + "               {\"term\": {\"id\": {\"value\":\"" + id.toString() + "\" }}}\n"
-                    + "            ]\n"
+                    + "            ],"
+                    + "            \"must\":[{\n"
+                    + "                 \"exists\": {\n"
+                    + "                     \"field\": \"fullText\"\n"
+                    + "                 }\n"
+                    + "             },\n"
+                    + "             {\n"
+                    + "                 \"term\": {\n"
+                    + "                     \"deleted\": {\n"
+                    + "                         \"value\": \"ALLOWED\"\n"
+                    + "                     }\n"
+                    + "                 }\n"
+                    + "             }]\n"
                     + "        }\n"
                     + "    }\n"
                     + "}";
@@ -387,7 +459,19 @@ public class ElasticsearchConverter {
                     + "        \"bool\":{\n"
                     + "            \"should\": [\n"
                     + "               {\"term\": {\"identifiers\": {\"value\":\"" + identifier + "\" }}}\n"
-                    + "            ]\n"
+                    + "            ],\n"
+                    + "            \"must\":[{\n"
+                    + "                 \"exists\": {\n"
+                    + "                     \"field\": \"fullText\"\n"
+                    + "                 }\n"
+                    + "             },\n"
+                    + "             {\n"
+                    + "                 \"term\": {\n"
+                    + "                     \"deleted\": {\n"
+                    + "                         \"value\": \"ALLOWED\"\n"
+                    + "                     }\n"
+                    + "                 }\n"
+                    + "             }]\n"
                     + "        }\n"
                     + "    }\n"
                     + "}";
@@ -397,6 +481,7 @@ public class ElasticsearchConverter {
 
     /**
      * Assisting method that sets document type facet
+     *
      * @param omtdFacets a list of facets
      */
     private static void setDocumentFacetValue(List<Facet> omtdFacets) {
@@ -450,6 +535,7 @@ public class ElasticsearchConverter {
 
     /**
      * Assisting method that sets document language facet
+     *
      * @param omtdFacets a list of facets
      * @param count the number of values found
      */

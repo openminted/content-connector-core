@@ -80,8 +80,9 @@ public class CORESearchService {
         if (query.getParams().containsKey(OMTDFacetEnum.DOCUMENT_TYPE.value())
                 && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).size() == 1
                 && query.getParams().get(OMTDFacetEnum.DOCUMENT_TYPE.value()).get(0)
-                .equalsIgnoreCase(omtdFacetLabels.
-                        getDocumentTypeLabelFromEnum(DocumentTypeEnum.WITH_ABSTRACT_ONLY))) {
+                .equalsIgnoreCase(
+                        omtdFacetLabels.getDocumentTypeLabelFromEnum(DocumentTypeEnum.WITH_ABSTRACT_ONLY)
+                )) {
             omtdSearchResult.setTotalHits(0);
             return omtdSearchResult;
         }
@@ -93,7 +94,7 @@ public class CORESearchService {
             if (searchResult != null) {
                 omtdSearchResult.setPublications(ElasticsearchConverter.getPublicationsFromSearchResultAsString(searchResult));
                 omtdSearchResult.setFacets(ElasticsearchConverter.getOmtdFacetsFromSearchResult(searchResult, query.getFacets()));
-                omtdSearchResult.setTotalHits(searchResult.getTotal());
+                omtdSearchResult.setTotalHits(searchResult.getTotal().intValue());
             }
         }catch(Exception e){
             logger.log(Level.WARNING, "Error querying CORE ", e);
@@ -109,7 +110,7 @@ public class CORESearchService {
             omtdQuery.setFrom(1);
             omtdQuery.setTo(25);
 
-            String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery);
+            String elasticSearchQueryString = elasticsearchConverter.constructElasticsearchQueryFromOmtdQuery(omtdQuery,false);
 
             Search search = new Search.Builder(elasticSearchQueryString)
                     .addIndex("articles")
@@ -128,7 +129,8 @@ public class CORESearchService {
             do {
                 scrollId = newScrollId;
                 SearchScroll scroll = new SearchScroll.Builder(scrollId, "5m")
-                        .setParameter(Parameters.SIZE, 25).build();
+//                        .setParameter(Parameters.SIZE, 25)
+                        .build();
 
                 hits = result.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
                 publicationResults.addAll(ElasticsearchConverter.getPublicationsFromResultJsonArray(hits));

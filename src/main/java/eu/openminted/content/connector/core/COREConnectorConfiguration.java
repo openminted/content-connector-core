@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * @author lucasanastasiou
  */
 @Configuration
-@ComponentScan("eu.openminted.content.connector")
+@ComponentScan({"eu.openminted.content.connector"})
 //@PropertySource(value = {"classpath:application.properties"})
 public class COREConnectorConfiguration {
 

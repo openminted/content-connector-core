@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  * @author lucasanastasiou
  */
 @Configuration
-@ComponentScan("eu.openminted.content.connector")
+@ComponentScan({"eu.openminted.content.connector"})
 public class COREElasticSearchConfiguration {
 
     @Value("${es.rest.endpoint:'localhost:9200'}")
